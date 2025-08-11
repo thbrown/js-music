@@ -1,0 +1,175 @@
+/* Music Grid Styles */
+.music-grid-app {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: Arial, sans-serif;
+}
+
+.grid-wrapper {
+  position: relative;
+  overflow-x: auto;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.grid-container { 
+  display: flex;
+  flex-wrap: wrap;
+  position: relative;
+}
+
+.note { 
+  width: 30px; /* Wider squares */
+  height: 20px; 
+  float: left; 
+  border: 1px solid #ccc; 
+  box-sizing: border-box;
+  transition: background-color 0.2s ease;
+}
+
+/* First note in measure marker */
+.measure-start {
+  border-left: 2px solid rgba(75, 0, 130, 0.6); /* Indigo color */
+}
+
+/* Sticky leftmost column */
+.note-label {
+  position: sticky;
+  left: 0;
+  z-index: 10;
+  box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+  user-select: none; /* Prevent text selection */
+  -webkit-user-select: none; /* Safari */
+  -moz-user-select: none; /* Firefox */
+  -ms-user-select: none; /* IE/Edge */
+}
+
+/* Column headers for starting position */
+.note-header {
+  height: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.note-header:hover:not(.note-label) {
+  background-color: #ddd !important;
+  box-shadow: 0 0 5px rgba(0,0,0,0.2);
+}
+
+.note-header.start-column {
+  background-color: #4CAF50 !important;
+  color: white !important;
+  box-shadow: 0 0 5px rgba(76, 175, 80, 0.5);
+}
+
+/* Start column indicator */
+.start-column {
+  border-left: 2px solid #4CAF50 !important;
+}
+
+/* Grey line styling */
+.note[data-line="13"] { 
+  background-color: #aaa; 
+}
+
+/* Control Panels */
+.control-panels {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+/* Main Controls Panel */
+.main-controls {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.playback-section {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.utility-section {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+/* Grid Controls */
+.grid-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  padding: 15px;
+  background-color: #f0f4f8;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  align-items: center;
+}
+
+.control-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background-color: white;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.control-group button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-width: 30px;
+  min-height: 30px;
+  padding: 6px;
+}
+
+.control-group label {
+  font-weight: bold;
+  margin-right: 5px;
+}
+
+.control-group span {
+  min-width: 30px;
+  text-align: center;
+}
+
+.control-group button {
+  width: 30px;
+  height: 30px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  border: 1px solid #ccc;
+  background-color: white;
+  border-radius: 4px;
+}
+
+.reset-button {
+  padding: 8px 15px;
+  background-color: #ff6b6b;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-left: auto;
+}
+
+.reset-button:hover {
+  background-color: #ff5252;
+}

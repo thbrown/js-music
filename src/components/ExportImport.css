@@ -1,0 +1,72 @@
+.export-import-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px;
+  background-color: #f5f5f5;
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.song-name-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 5px;
+}
+
+.song-name-container label {
+  font-weight: bold;
+  color: #333;
+  white-space: nowrap;
+}
+
+.song-name-input {
+  flex: 1;
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.song-name-input:focus {
+  border-color: #4a90e2;
+  box-shadow: 0 0 3px rgba(74, 144, 226, 0.3);
+}
+
+.export-import-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.export-button, .import-button {
+  padding: 8px 15px;
+  background-color: #4a90e2;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.export-button:hover, .import-button:hover {
+  background-color: #3a7bc8;
+}
+
+.export-button {
+  background-color: #4caf50;
+}
+
+.export-button:hover {
+  background-color: #3d9040;
+}
+
+.import-button {
+  background-color: #ff9800;
+}
+
+.import-button:hover {
+  background-color: #e68900;
+}
