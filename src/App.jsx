@@ -1,15 +1,40 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import './App.css'
 import Controls from './components/Controls'
 import ExportCode from './components/ExportCode'
+import FileImportExport from './components/FileImportExport'
 import MusicGrid from './components/MusicGrid'
-import SongSettings from './components/SongSettings'
 
-
+const DEFAULT_MIDDLE_C_POSITION = 13;
+const DEFAULT_NOTES_PER_MEASURE = 8;
+const DEFAULT_GRID_SIZE = { rows: 26, cols: 50 };
 
 function App() {
+  useEffect(() => {
+    const savedGrid = localStorage.getItem('musicGrid');
+    const savedGridSize = localStorage.getItem('gridSize');
+    const savedNotesPerMeasure = localStorage.getItem('notesPerMeasure');
+    const settings = localStorage.getItem('settings');
+    const middleCPosition = localStorage.getItem('middleCPosition');
 
-   /*
+    if (savedGrid != null && savedGrid != 'undefined') {
+      setNoteGrid(JSON.parse(savedGrid));
+    }
+    if (savedGridSize != null && savedGridSize != 'undefined') {
+      setGridSize(JSON.parse(savedGridSize));
+    }
+    if (savedNotesPerMeasure != null && savedNotesPerMeasure != 'undefined') {
+      setNotesPerMeasure(JSON.parse(savedNotesPerMeasure));
+    }
+    if (settings != null && settings != 'undefined') {
+      setSettings(JSON.parse(settings));
+    }
+    if (middleCPosition != null && middleCPosition != 'undefined') {
+      setMiddleCPosition(JSON.parse(middleCPosition));
+    }
+  }, []);
+
+  /*
   useEffect(() => {
     async function setupRoom() {
       const room = joinRoom({ appId: "https://crooked-yams-web-rtc-default-rtdb.firebaseio.com", password: "some-top-secret-pswd" }, "djshdhsje", (error) => console.log("PIZZA join error", error));
@@ -48,12 +73,12 @@ function App() {
   */
 
   // State for the note grid
-  const [noteGrid, setNoteGrid] = useState(Array(26).fill().map(() => Array(250).fill(0)))
+  const [noteGrid, setNoteGrid] = useState(Array(DEFAULT_GRID_SIZE.rows).fill().map(() => Array(DEFAULT_GRID_SIZE.cols).fill(0)))
   
   // State for grid dimensions and middle C position
-  const [gridSize, setGridSize] = useState({ rows: 26, cols: 250 })
-  const [offset, setOffset] = useState(13)
-  const [notesPerMeasure, setNotesPerMeasure] = useState(8)
+  const [gridSize, setGridSize] = useState(DEFAULT_GRID_SIZE)
+  const [notesPerMeasure, setNotesPerMeasure] = useState(DEFAULT_NOTES_PER_MEASURE)
+  const [middleCPosition, setMiddleCPosition] = useState(DEFAULT_MIDDLE_C_POSITION);
   
   // State for control settings
   const [settings, setSettings] = useState({
@@ -62,82 +87,58 @@ function App() {
     oscillatorType: 'sine'
   })
 
-  // Handle note grid changes
-  const handleNoteToggle = (newGrid) => {
-    setNoteGrid(newGrid)
-  }
-  
-  // Handle import
-  const handleImport = (newGrid, newGridSize, newOffset, newNotesPerMeasure) => {
-    // Create a completely new grid with proper structure
-    const properlyStructuredGrid = [];
-    
-    // Initialize the grid with the correct dimensions
-    for (let i = 0; i < newGridSize.rows; i++) {
-      properlyStructuredGrid[i] = [];
-      for (let j = 0; j < newGridSize.cols; j++) {
-        // Copy values from the imported grid if they exist, otherwise use 0
-        properlyStructuredGrid[i][j] = (newGrid[i] && newGrid[i][j] === 1) ? 1 : 0;
-      }
-    }
-    
-    // Force a clean state update by clearing the grid first
-    setNoteGrid([])
-    
-    // Use setTimeout to ensure the state update happens in separate render cycles
-    setTimeout(() => {
-      // Apply the new grid data
-      setNoteGrid(properlyStructuredGrid)
-      setGridSize(newGridSize)
-      setOffset(newOffset)
-      setNotesPerMeasure(newNotesPerMeasure)
-      
-      // Save to localStorage to ensure persistence
-      localStorage.setItem('musicGrid', JSON.stringify(properlyStructuredGrid))
-      localStorage.setItem('gridSize', JSON.stringify(newGridSize))
-      localStorage.setItem('offset', JSON.stringify(newOffset))
-      localStorage.setItem('notesPerMeasure', JSON.stringify(newNotesPerMeasure))
-      
-      // Force a reload of the page to ensure everything is properly initialized
-      window.location.reload();
-    }, 50)
-  }
-
   // Handle control changes
   const handleControlChange = (newSettings) => {
     setSettings(newSettings)
   }
 
+  // Reset the grid to default size and clear all notes
+  const resetGrid = () => {
+    // Reset to default grid size
+    const newGrid = Array(DEFAULT_GRID_SIZE.rows).fill().map(() => Array(DEFAULT_GRID_SIZE.cols).fill(0));
+    setNoteGrid(newGrid);
+    setGridSize(DEFAULT_GRID_SIZE);
+    setMiddleCPosition(DEFAULT_MIDDLE_C_POSITION);
+    
+    localStorage.setItem('musicGrid', JSON.stringify(newGrid));
+    localStorage.setItem('gridSize', JSON.stringify(DEFAULT_GRID_SIZE));
+    localStorage.setItem('middleCPosition', JSON.stringify(DEFAULT_MIDDLE_C_POSITION));
+  };
+
   return (
     <div className="music-grid-app">
-      <h1>Music Grid Composer</h1>
+      <h1>"Vibe" Coder</h1>
       
       <div className="grid-wrapper">
         <MusicGrid 
-          onNoteToggle={handleNoteToggle} 
-          oscillatorType={settings.oscillatorType}
-          frequency={settings.frequency}
-          tempo={settings.tempo}
+          noteGrid={noteGrid}
+          setNoteGrid={setNoteGrid} 
+          middleCPosition={middleCPosition}
+          setMiddleCPosition={setMiddleCPosition}
+          settings={settings}
+          gridSize={gridSize}
+          notesPerMeasure={notesPerMeasure}
+          setGridSize={setGridSize}
+          setNotesPerMeasure={setNotesPerMeasure}
+          resetGrid={resetGrid}
         />
       </div>
       
       <div className="controls-container">
         <Controls onControlChange={handleControlChange} />
-        <SongSettings
+        <FileImportExport
           noteGrid={noteGrid}
           gridSize={gridSize}
-          offset={offset}
           notesPerMeasure={notesPerMeasure}
-          onImport={handleImport}
+          settings={settings}
+          middleCPosition={middleCPosition}
+          setMiddleCPosition={setMiddleCPosition}
+        />
+        <ExportCode 
+          noteGrid={noteGrid} 
+          settings={settings}
         />
       </div>
-      
-      <ExportCode 
-        noteGrid={noteGrid} 
-        oscillatorType={settings.oscillatorType}
-        frequency={settings.frequency}
-        tempo={settings.tempo}
-      />
     </div>
   )
 }

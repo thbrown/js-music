@@ -1,9 +1,11 @@
 import React, { useRef, useState } from 'react';
-import './SongSettings.css';
+import './FileImportExport.css';
 
-const SongSettings = ({ noteGrid, gridSize, middleCPosition, notesPerMeasure, onImport }) => {
+const DEFAULT_SONG_NAME = 'My Composition';
+
+const FileImportExport = ({ noteGrid, gridSize, notesPerMeasure, settings, middleCPosition }) => {
   const fileInputRef = useRef(null);
-  const [songName, setSongName] = useState('My Composition');
+  const [songName, setSongName] = useState(DEFAULT_SONG_NAME);
 
   // Export grid data to a JSON file
   const exportGrid = () => {
@@ -21,16 +23,17 @@ const SongSettings = ({ noteGrid, gridSize, middleCPosition, notesPerMeasure, on
       }
 
       // Use default name if empty
-      const finalSongName = songName.trim() || 'My Composition';
+      const finalSongName = songName.trim() || DEFAULT_SONG_NAME;
       
       // Create a compact data object with only necessary information
       const gridData = {
         songName: finalSongName,
-        activeNotes,  // Only store active notes instead of entire grid
+        activeNotes,
         gridSize,
-        middleCPosition,
         notesPerMeasure,
-        version: '2.0', // Updated version for new format
+        version: '2.0',
+        settings,
+        middleCPosition,
         timestamp: new Date().toISOString()
       };
 
@@ -71,43 +74,39 @@ const SongSettings = ({ noteGrid, gridSize, middleCPosition, notesPerMeasure, on
       
       reader.onload = (e) => {
         try {
-          const gridData = JSON.parse(e.target.result);
+          const savedFileData = JSON.parse(e.target.result);
           
           // Validate the imported data (only support new format)
-          if (!gridData.activeNotes || !gridData.gridSize || !gridData.middleCPosition) {
+          if (!savedFileData.activeNotes || !savedFileData.gridSize) {
             throw new Error('Invalid or unsupported grid data format');
           }
           
           // Reconstruct the noteGrid from activeNotes
           // Create a properly sized grid with all cells initialized to 0
           const reconstructedGrid = [];
-          for (let i = 0; i < gridData.gridSize.rows; i++) {
+          for (let i = 0; i < savedFileData.gridSize.rows; i++) {
             reconstructedGrid[i] = [];
-            for (let j = 0; j < gridData.gridSize.cols; j++) {
+            for (let j = 0; j < savedFileData.gridSize.cols; j++) {
               reconstructedGrid[i][j] = 0;
             }
           }
           
           // Set active notes
-          gridData.activeNotes.forEach(([row, col]) => {
+          savedFileData.activeNotes.forEach(([row, col]) => {
             // Ensure the row and column are valid
-            if (row >= 0 && row < gridData.gridSize.rows && col >= 0 && col < gridData.gridSize.cols) {
+            if (row >= 0 && row < savedFileData.gridSize.rows && col >= 0 && col < savedFileData.gridSize.cols) {
               reconstructedGrid[row][col] = 1;
             }
           });
           
-          // Update song name if available
-          if (gridData.songName) {
-            setSongName(gridData.songName);
-          }
-          
-          // Pass the reconstructed data to the parent component
-          onImport(
-            reconstructedGrid,
-            gridData.gridSize,
-            gridData.middleCPosition,
-            gridData.notesPerMeasure || 8
-          );
+          localStorage.clear();
+          localStorage.setItem('songName', JSON.stringify(savedFileData.songName));
+          localStorage.setItem('musicGrid', JSON.stringify(reconstructedGrid))
+          localStorage.setItem('gridSize', JSON.stringify(savedFileData.gridSize))
+          localStorage.setItem('notesPerMeasure', JSON.stringify(savedFileData.notesPerMeasure));
+          localStorage.setItem('settings', JSON.stringify(savedFileData.settings));
+          localStorage.setItem('middleCPosition', JSON.stringify(savedFileData.middleCPosition));
+          window.location.reload();
         } catch (error) {
           console.error('Error parsing imported file:', error);
           alert('The selected file contains invalid grid data. Please select a valid export file.');
@@ -168,4 +167,4 @@ const SongSettings = ({ noteGrid, gridSize, middleCPosition, notesPerMeasure, on
   );
 };
 
-export default SongSettings;
+export default FileImportExport;

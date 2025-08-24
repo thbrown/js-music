@@ -36,6 +36,79 @@ An interactive music grid application built with React that allows you to create
    ```
 5. Open your browser and navigate to `http://localhost:5173`
 
+## Deployment to GitHub Pages
+
+### Building the Project
+
+1. Update the `vite.config.js` file to include your repository name as the base path:
+   ```js
+   export default defineConfig({
+     plugins: [react()],
+     base: '/your-repo-name/',  // Replace with your actual repository name
+   })
+   ```
+
+2. Build the project:
+   ```bash
+   npm run build
+   # or
+   yarn build
+   ```
+   This will create a `dist` folder with the production build.
+
+3. Deploy to GitHub Pages using one of these methods:
+
+   **Option 1: Manual Deployment**
+   - Copy all files from the `dist` folder to the `docs` folder in your repository:
+     ```bash
+     # Create docs folder if it doesn't exist
+     mkdir -p docs
+     # Copy dist contents to docs
+     cp -r dist/* docs/
+     ```
+   - Commit and push the changes to your GitHub repository
+   - Go to your repository settings on GitHub
+   - Under "GitHub Pages", select the "main" branch and "/docs" folder as the source
+
+   **Option 2: GitHub Actions (Automated)**
+   - Create a `.github/workflows/deploy.yml` file with the following content:
+     ```yml
+     name: Deploy to GitHub Pages
+
+     on:
+       push:
+         branches: [main]
+
+     jobs:
+       build-and-deploy:
+         runs-on: ubuntu-latest
+         steps:
+           - name: Checkout
+             uses: actions/checkout@v3
+
+           - name: Set up Node.js
+             uses: actions/setup-node@v3
+             with:
+               node-version: 16
+
+           - name: Install dependencies
+             run: npm ci
+
+           - name: Build
+             run: npm run build
+
+           - name: Deploy to GitHub Pages
+             uses: JamesIves/github-pages-deploy-action@v4
+             with:
+               folder: dist
+               branch: gh-pages
+     ```
+   - Commit and push this file to your repository
+   - GitHub Actions will automatically build and deploy your site
+   - Go to your repository settings and ensure GitHub Pages is set to use the `gh-pages` branch
+
+4. Your site will be available at: `https://yourusername.github.io/your-repo-name/`
+
 ## Testing the Features
 
 ### Black Key Shading
