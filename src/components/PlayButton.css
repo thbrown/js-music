@@ -1,70 +1,160 @@
-.play-button-container {
-  margin: 10px 0;
-}
-
-.playback-controls {
+/* Playback Panel */
+.playback-panel {
   display: flex;
-  gap: 10px;
   align-items: center;
+  gap: 16px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
 }
 
-.play-button, .pause-button, .reset-button {
-  padding: 8px 16px;
-  font-weight: bold;
-  color: white;
+/* Play/Stop Button */
+.playback-btn {
+  width: 56px;
+  height: 56px;
   border: none;
-  border-radius: 4px;
+  border-radius: 50%;
+  background: white;
+  color: #667eea;
   cursor: pointer;
-  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  flex-shrink: 0;
 }
 
-.play-button {
-  background-color: #4CAF50;
+.playback-btn:hover {
+  transform: scale(1.08);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
-.play-button:hover {
-  background-color: #45a049;
+.playback-btn:active {
+  transform: scale(0.95);
 }
 
-.play-button:active {
-  background-color: #3e8e41;
+.playback-btn.playing {
+  background: #ff6b6b;
+  color: white;
 }
 
-.pause-button {
-  background-color: #ff9800;
+.playback-btn.playing:hover {
+  background: #ee5a5a;
 }
 
-.pause-button:hover {
-  background-color: #e68a00;
+/* SVG Icons */
+.btn-icon {
+  width: 32px;
+  height: 32px;
 }
 
-.pause-button:active {
-  background-color: #cc7a00;
+/* Status Area */
+.playback-status {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 150px;
 }
 
-.reset-button {
-  background-color: #f44336;
+.status-text {
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
 }
 
-.reset-button:hover {
-  background-color: #e53935;
+.status-text.hint {
+  opacity: 0.85;
+  font-size: 13px;
+  font-weight: 400;
 }
 
-.reset-button:active {
-  background-color: #d32f2f;
+/* Progress Bar */
+.progress-bar {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+  overflow: hidden;
 }
 
-.reset-button:disabled {
-  background-color: #cccccc;
+.progress-fill {
+  height: 100%;
+  background: white;
+  border-radius: 3px;
+  transition: width 0.1s linear;
+}
+
+/* Start Position Indicator */
+.start-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.start-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 500;
+}
+
+.start-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: white;
+  line-height: 1.2;
+}
+
+/* Reset Button - matches start-indicator size */
+.reset-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.9);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.reset-btn:hover:not(:disabled) {
+  background: rgba(255, 107, 107, 0.9);
+  color: white;
+}
+
+.reset-btn:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.reset-btn:disabled {
+  opacity: 0.4;
   cursor: not-allowed;
 }
 
-.current-column {
-  margin-left: 10px;
-  font-weight: bold;
+.reset-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 500;
 }
 
-/* Highlighted column style */
+.reset-icon {
+  width: 22px;
+  height: 22px;
+  margin-top: 2px;
+}
+
+/* Highlighted column style (used in grid) */
 .note.highlighted {
   border: 2px solid #ff9800;
   box-shadow: 0 0 5px rgba(255, 152, 0, 0.5);

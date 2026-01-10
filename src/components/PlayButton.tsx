@@ -1,20 +1,21 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import './PlayButton.css';
 import { NoteGrid, Settings, PlayButtonProps } from '../types';
-
-// PlayButtonProps is now imported from types/index.ts
+import { scheduleNote } from '../utils/audio';
 
 // Define the static property for the component
 interface PlayButtonStatic {
   setStartingColumn?: (column: number) => void;
 }
 
-const PlayButton: React.FC<PlayButtonProps> & PlayButtonStatic = ({ 
-  noteGrid, 
-  setCurrentColumn, 
-  settings, 
-  currentColumn, 
-  startColumn 
+const PlayButton: React.FC<PlayButtonProps> & PlayButtonStatic = ({
+  noteGrid,
+  setCurrentColumn,
+  settings,
+  currentColumn,
+  startColumn,
+  middleCPosition,
+  onReset
 }) => {
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -24,12 +25,9 @@ const PlayButton: React.FC<PlayButtonProps> & PlayButtonStatic = ({
 
   const colRef = useRef<number>(currentColumn);
 
-  // Optimized for performance
-
   // Collect active notes
   const collectActiveNotes = useCallback((): [number, number][] => {
     const activeNotes: [number, number][] = [];
-    // Use the actual grid dimensions instead of hardcoded values
     for (let row = 1; row < noteGrid.length; row++) {
       if (noteGrid[row]) {
         for (let col = 0; col < noteGrid[row].length; col++) {
@@ -42,24 +40,22 @@ const PlayButton: React.FC<PlayButtonProps> & PlayButtonStatic = ({
     return activeNotes;
   }, [noteGrid]);
 
-  // Use the grid dimensions instead of recalculating max column
+  // Get the max column with notes
   const getMaxColumn = useCallback((): number => {
     let maxColumn = -1;
-    for(const [_, col] of collectActiveNotes()) {
+    for (const [_, col] of collectActiveNotes()) {
       maxColumn = Math.max(maxColumn, col);
     }
     return maxColumn;
   }, [collectActiveNotes]);
-  
+
   // Stop all playback and clean up
   const stopPlayback = useCallback(() => {
-    // Cancel animation frame
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
       animationFrameRef.current = null;
     }
-    
-    // Stop and disconnect all oscillators
+
     oscillatorsRef.current.forEach(osc => {
       try {
         osc.stop();
@@ -69,34 +65,29 @@ const PlayButton: React.FC<PlayButtonProps> & PlayButtonStatic = ({
       }
     });
     oscillatorsRef.current = [];
-    
-    // Close audio context
+
     if (audioContextRef.current) {
       audioContextRef.current.close().catch(e => console.error('Error closing audio context:', e));
       audioContextRef.current = null;
     }
-    
-    // Reset state
+
     setIsPlaying(false);
-    setCurrentColumn(startColumn);
-  }, [setCurrentColumn, startColumn]);
-  
+    setCurrentColumn(-1);
+  }, [setCurrentColumn]);
+
   // Update the current column based on elapsed time
   const updateCurrentColumn = useCallback((elapsedTime: number) => {
-    // Calculate current column based on tempo (same conversion as in playComposition)
-    const columnsPerSecond = settings.tempo / 20; // Convert tempo (BPM) to columns per second
+    const columnsPerSecond = settings.tempo / 20;
     const column = Math.floor(elapsedTime * columnsPerSecond) + startColumn;
 
     if (column !== colRef.current) {
       setCurrentColumn(column);
       colRef.current = column;
     }
-    
-    // Check if we've reached the end of the composition
-    if (column > getMaxColumn() + 10) { // +10 to give some buffer after the last note // Maybe this should be one measure
+
+    if (column > getMaxColumn() + 10) {
       stopPlayback();
     } else {
-      // Continue animation
       animationFrameRef.current = requestAnimationFrame(() => {
         if (audioContextRef.current) {
           const newElapsedTime = (audioContextRef.current.currentTime - startTimeRef.current);
@@ -105,84 +96,63 @@ const PlayButton: React.FC<PlayButtonProps> & PlayButtonStatic = ({
       });
     }
   }, [getMaxColumn, stopPlayback, startColumn, settings.tempo, setCurrentColumn]);
-  
+
   // Function to play the composition
   const playComposition = useCallback(() => {
-    // If already playing, do nothing
     if (isPlaying) return;
-    
-    // Stop any existing playback
+
     stopPlayback();
-    
-    // Create new audio context
+
     audioContextRef.current = new AudioContext();
     startTimeRef.current = audioContextRef.current.currentTime;
-    
-    // Set current column to starting column immediately
+
     setCurrentColumn(startColumn);
-    
-    // Collect active notes
+
     const activeNotes = collectActiveNotes();
-    
-    // Pre-calculate values that don't change for each note
-    const baseFrequency = settings.frequency;
-    const semitoneRatio = Math.pow(2, 1/12); // 12th root of 2 for semitone calculation
-    const middleC = 13; // Middle C position
-    const columnsPerSecond = settings.tempo / 20; // Convert tempo (BPM) to columns per second
-    const noteDuration = 0.2; // Fixed note duration for now
+
+    const columnsPerSecond = settings.tempo / 20;
+    const noteDuration = 0.2;
     const currentTime = audioContextRef.current.currentTime;
-    
-    // Create and schedule oscillators
+
     activeNotes.forEach(([row, col]) => {
-      // Skip notes before the start column
       if (col < startColumn) return;
-      
-      const osc = audioContextRef.current!.createOscillator();
-      const gainNode = audioContextRef.current!.createGain();
-      
-      // Connect oscillator to gain node and gain node to destination
-      osc.connect(gainNode);
-      gainNode.connect(audioContextRef.current!.destination);
-      
-      // Calculate frequency using equal temperament formula
-      const semitoneOffset = middleC - row;
-      osc.frequency.value = baseFrequency * Math.pow(semitoneRatio, semitoneOffset);
-      
-      // Set oscillator type
-      osc.type = settings.oscillatorType as OscillatorType;
-      
-      // Schedule start and stop times
-      const startTime = (col - startColumn) / columnsPerSecond;
-      
-      osc.start(currentTime + startTime);
-      osc.stop(currentTime + startTime + noteDuration);
-      
-      // Store oscillator for later cleanup
+
+      const noteStartTime = currentTime + (col - startColumn) / columnsPerSecond;
+
+      const osc = scheduleNote(
+        audioContextRef.current!,
+        row,
+        middleCPosition,
+        noteStartTime,
+        {
+          frequency: settings.frequency,
+          oscillatorType: settings.oscillatorType as OscillatorType,
+          duration: noteDuration,
+          gain: 1,
+        }
+      );
+
       oscillatorsRef.current.push(osc);
     });
-    
-    // Start animation to update current column
+
     setIsPlaying(true);
-    
-    // Start with a small delay to ensure UI updates first
+
     animationFrameRef.current = requestAnimationFrame(() => {
       if (audioContextRef.current) {
         const elapsedTime = (audioContextRef.current.currentTime - startTimeRef.current);
         updateCurrentColumn(elapsedTime);
       }
     });
-  }, [isPlaying, stopPlayback, setCurrentColumn, startColumn, collectActiveNotes, settings.frequency, settings.tempo, settings.oscillatorType, updateCurrentColumn]);
-  
-  // Clean up on unmount - added after stopPlayback is defined
+  }, [isPlaying, stopPlayback, setCurrentColumn, startColumn, collectActiveNotes, settings.frequency, settings.tempo, settings.oscillatorType, updateCurrentColumn, middleCPosition]);
+
+  // Clean up on unmount
   useEffect(() => {
     return () => {
-      // Cancel animation frame
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
         animationFrameRef.current = null;
       }
-      
-      // Stop and disconnect all oscillators
+
       oscillatorsRef.current.forEach(osc => {
         try {
           osc.stop();
@@ -192,8 +162,7 @@ const PlayButton: React.FC<PlayButtonProps> & PlayButtonStatic = ({
         }
       });
       oscillatorsRef.current = [];
-      
-      // Close audio context
+
       if (audioContextRef.current) {
         audioContextRef.current.close().catch(e => console.error('Error closing audio context:', e));
         audioContextRef.current = null;
@@ -201,33 +170,72 @@ const PlayButton: React.FC<PlayButtonProps> & PlayButtonStatic = ({
     };
   }, []);
 
+  // Calculate progress for display
+  const maxCol = getMaxColumn();
+  const progress = isPlaying && maxCol > startColumn
+    ? Math.min(100, Math.max(0, ((currentColumn - startColumn) / (maxCol - startColumn)) * 100))
+    : 0;
+
   return (
-    <div className="play-button-container">
-      <div className="playback-controls">
-        {!isPlaying ? (
-          <button className="play-button" onClick={playComposition}>
-            PLAY
-          </button>
+    <div className="playback-panel">
+      {/* Main play/stop button */}
+      <button
+        className={`playback-btn ${isPlaying ? 'playing' : ''}`}
+        onClick={isPlaying ? stopPlayback : playComposition}
+        title={isPlaying ? 'Stop playback' : 'Play composition'}
+      >
+        {isPlaying ? (
+          <svg className="btn-icon" viewBox="0 0 24 24" fill="currentColor">
+            <rect x="6" y="6" width="12" height="12" />
+          </svg>
         ) : (
-          <button className="stop-button" onClick={stopPlayback}>
-            STOP
-          </button>
+          <svg className="btn-icon" viewBox="0 0 24 24" fill="currentColor">
+            <polygon points="6,4 20,12 6,20" />
+          </svg>
+        )}
+      </button>
+
+      {/* Progress/status area */}
+      <div className="playback-status">
+        {isPlaying ? (
+          <>
+            <div className="progress-bar">
+              <div className="progress-fill" style={{ width: `${progress}%` }} />
+            </div>
+            <span className="status-text">Playing...</span>
+          </>
+        ) : (
+          <span className="status-text hint">
+            Click header row to set start position
+          </span>
         )}
       </div>
-      <div className="column-controls">
-        <span>Start Column: {startColumn}</span>
-        <div className="current-column">Current Column: {currentColumn}</div>
+
+      {/* Start position indicator */}
+      <div className="start-indicator" title="Playback starts from this column">
+        <span className="start-label">Start</span>
+        <span className="start-value">{startColumn}</span>
       </div>
-      <div className="column-info">
-        <small>Click any column to set as starting position</small>
-      </div>
+
+      {/* Reset button */}
+      <button
+        className="reset-btn"
+        onClick={onReset}
+        title="Clear all notes and reset start position"
+        disabled={isPlaying}
+      >
+        <span className="reset-label">Reset</span>
+        <svg className="reset-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+          <path d="M3 3v5h5" />
+        </svg>
+      </button>
     </div>
   );
 };
 
 // Add static method for setting starting column
 PlayButton.setStartingColumn = (column: number) => {
-  // This will be implemented by the parent component
   console.log('Static method called with column:', column);
 };
 

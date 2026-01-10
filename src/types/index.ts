@@ -54,4 +54,5 @@ export interface PlayButtonProps {
   startColumn: number;
   setStartColumn: React.Dispatch<React.SetStateAction<number>>;
   middleCPosition: number;
+  onReset: () => void;
 }

@@ -3,6 +3,7 @@ import './MusicGrid.css';
 import PlayButton from './PlayButton';
 import GridCanvas from './GridCanvas';
 import { MusicGridProps } from '../types';
+import { playNote } from '../utils/audio';
 
 // Extend the PlayButton with static properties
 interface PlayButtonWithStatic extends React.FC<any> {
@@ -45,6 +46,16 @@ const MusicGrid: React.FC<MusicGridProps> = ({
     }
   };
 
+  // Play a single note using shared audio utility
+  const playSingleNote = useCallback((row: number) => {
+    playNote(row, middleCPosition, {
+      frequency: settings.frequency,
+      oscillatorType: settings.oscillatorType as OscillatorType,
+      duration: 0.2,
+      gain: 1,
+    });
+  }, [middleCPosition, settings.frequency, settings.oscillatorType]);
+
   // Toggle note state
   const toggleNote = useCallback((row: number, col: number) => {
     if (col === 0) return;
@@ -56,11 +67,17 @@ const MusicGrid: React.FC<MusicGridProps> = ({
       newGrid[row] = [...newGrid[row]];
     }
 
-    newGrid[row][col] = newGrid[row][col] ? 0 : 1;
+    const wasActive = newGrid[row][col] === 1;
+    newGrid[row][col] = wasActive ? 0 : 1;
+
+    // Play the note when activating it
+    if (!wasActive) {
+      playSingleNote(row);
+    }
 
     localStorage.setItem('musicGrid', JSON.stringify(newGrid));
     setNoteGrid(newGrid);
-  }, [noteGrid, setNoteGrid]);
+  }, [noteGrid, setNoteGrid, playSingleNote]);
 
   // Get note name based on position
   const getNoteName = useCallback((row: number): string => {
@@ -132,6 +149,7 @@ const MusicGrid: React.FC<MusicGridProps> = ({
   }, [gridSize.cols, startColumn, currentColumn]);
 
   // Render note labels (column 0) - stays as DOM for sticky positioning
+  // Clicking a label plays that note
   const renderNoteLabels = useCallback(() => {
     const labels: React.ReactNode[] = [];
 
@@ -140,7 +158,8 @@ const MusicGrid: React.FC<MusicGridProps> = ({
       labels.push(
         <div
           key={`label_${row}`}
-          className="note note-label"
+          className="note note-label note-label-clickable"
+          onClick={() => playSingleNote(row)}
           style={{
             backgroundColor: isBlackKey ? '#444' : '#fff',
             color: isBlackKey ? 'white' : 'black',
@@ -148,6 +167,7 @@ const MusicGrid: React.FC<MusicGridProps> = ({
             justifyContent: 'center',
             alignItems: 'center',
             fontSize: '10px',
+            cursor: 'pointer',
           }}
         >
           {getNoteName(row)}
@@ -156,7 +176,7 @@ const MusicGrid: React.FC<MusicGridProps> = ({
     }
 
     return labels;
-  }, [gridSize.rows, isBlackKeyRow, getNoteName]);
+  }, [gridSize.rows, isBlackKeyRow, getNoteName, playSingleNote]);
 
   // Handle grid size changes
   const updateGridSize = (newRows: number, newCols: number, addToTop = false) => {
@@ -200,6 +220,26 @@ const MusicGrid: React.FC<MusicGridProps> = ({
     setMiddleCPosition(newMiddleCPosition);
   };
 
+  // Remove rows from the top of the grid
+  const removeRowsFromTop = (count: number) => {
+    const newRows = Math.max(6, gridSize.rows - count);
+    const rowsToRemove = gridSize.rows - newRows;
+
+    if (rowsToRemove <= 0) return;
+
+    // Remove rows from the beginning and adjust middleCPosition
+    const newMiddleCPosition = middleCPosition - rowsToRemove;
+    const newGrid = noteGrid.slice(rowsToRemove);
+
+    localStorage.setItem('musicGrid', JSON.stringify(newGrid));
+    localStorage.setItem('gridSize', JSON.stringify({ rows: newRows, cols: gridSize.cols }));
+    localStorage.setItem('middleCPosition', JSON.stringify(newMiddleCPosition));
+
+    setNoteGrid(newGrid);
+    setGridSize({ rows: newRows, cols: gridSize.cols });
+    setMiddleCPosition(newMiddleCPosition);
+  };
+
   // Pass the starting column to PlayButton when it changes
   useEffect(() => {
     const playButtonWithStatic = PlayButton as PlayButtonWithStatic;
@@ -218,11 +258,20 @@ const MusicGrid: React.FC<MusicGridProps> = ({
       {/* Grid Dimension Controls */}
       <div className="grid-controls">
         <div className="control-group">
-          <label>Add Notes: </label>
-          <button onClick={() => updateGridSize(gridSize.rows + 5, gridSize.cols, true)} title="Add notes to top">↑</button>
-          <button onClick={() => updateGridSize(gridSize.rows + 5, gridSize.cols)} title="Add notes to bottom">↓</button>
+          <label>High notes: </label>
+          <button onClick={() => updateGridSize(gridSize.rows + 5, gridSize.cols, true)} title="Add 5 higher notes">+</button>
+          <button onClick={() => removeRowsFromTop(5)} title="Remove 5 higher notes">−</button>
+        </div>
+
+        <div className="control-group">
+          <label>Low notes: </label>
+          <button onClick={() => updateGridSize(gridSize.rows + 5, gridSize.cols, false)} title="Add 5 lower notes">+</button>
+          <button onClick={() => updateGridSize(Math.max(6, gridSize.rows - 5), gridSize.cols, false)} title="Remove 5 lower notes">−</button>
+        </div>
+
+        <div className="control-group">
+          <label>Total: </label>
           <span>{gridSize.rows - 1}</span>
-          <button onClick={() => updateGridSize(Math.max(6, gridSize.rows - 5), gridSize.cols)} title="Remove notes">-</button>
         </div>
 
         <div className="control-group">
@@ -269,24 +318,20 @@ const MusicGrid: React.FC<MusicGridProps> = ({
         </div>
       </div>
 
-      {/* Main Controls Panel */}
-      <div className="main-controls">
-        <div className="playback-section">
-          <PlayButton
-            noteGrid={noteGrid}
-            settings={settings}
-            middleCPosition={middleCPosition}
-            currentColumn={currentColumn}
-            setCurrentColumn={setCurrentColumn}
-            startColumn={startColumn}
-            setStartColumn={setStartColumn}
-          />
-        </div>
-
-        <div className="utility-section">
-          <button className="reset-button" onClick={resetGrid} title="Reset all notes to default state">Reset Notes</button>
-        </div>
-      </div>
+      {/* Playback Controls */}
+      <PlayButton
+        noteGrid={noteGrid}
+        settings={settings}
+        middleCPosition={middleCPosition}
+        currentColumn={currentColumn}
+        setCurrentColumn={setCurrentColumn}
+        startColumn={startColumn}
+        setStartColumn={setStartColumn}
+        onReset={() => {
+          resetGrid();
+          setStartColumn(1);
+        }}
+      />
     </div>
   );
 };

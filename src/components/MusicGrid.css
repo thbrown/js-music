@@ -74,6 +74,21 @@
   -ms-user-select: none; /* IE/Edge */
 }
 
+/* Clickable note labels */
+.note-label-clickable {
+  cursor: pointer;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.note-label-clickable:hover {
+  transform: scale(1.05);
+  box-shadow: 2px 0 8px rgba(0,0,0,0.2);
+}
+
+.note-label-clickable:active {
+  transform: scale(0.98);
+}
+
 /* Column headers for starting position */
 .note-header {
   height: 20px;
@@ -109,29 +124,6 @@
   gap: 15px;
 }
 
-/* Main Controls Panel */
-.main-controls {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  padding: 15px;
-  background-color: #f8f9fa;
-  border-radius: 8px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-}
-
-.playback-section {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  gap: 15px;
-}
-
-.utility-section {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-}
 
 /* Grid Controls */
 .grid-controls {
@@ -185,16 +177,3 @@
   border-radius: 4px;
 }
 
-.reset-button {
-  padding: 8px 15px;
-  background-color: #ff6b6b;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  margin-left: auto;
-}
-
-.reset-button:hover {
-  background-color: #ff5252;
-}
