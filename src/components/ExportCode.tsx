@@ -1,13 +1,18 @@
 import { useEffect, useState } from 'react';
 import './ExportCode.css';
+import { ExportCodeProps } from '../types';
 
-const ExportCode = ({ noteGrid, oscillatorType, frequency = 440, tempo = 100 }) => {
-  const [exportCode, setExportCode] = useState('');
+const ExportCode: React.FC<ExportCodeProps> = ({ 
+  noteGrid, 
+  settings 
+}) => {
+  const [exportCode, setExportCode] = useState<string>('');
+  const { oscillatorType, frequency = 440, tempo = 100 } = settings;
 
   // Generate export code whenever the grid or settings change
   useEffect(() => {
     // Collect active notes using dynamic grid dimensions
-    const activeNotes = [];
+    const activeNotes: [number, number][] = [];
     // Use the actual grid dimensions instead of hardcoded values
     for (let row = 1; row < noteGrid.length; row++) {
       if (noteGrid[row]) {
@@ -20,8 +25,8 @@ const ExportCode = ({ noteGrid, oscillatorType, frequency = 440, tempo = 100 }) 
     }
     
     // Prepare data for export
-    const noteRows = [];
-    const noteCols = [];
+    const noteRows: number[] = [];
+    const noteCols: number[] = [];
     for (let i = 0; i < activeNotes.length; i++) {
       noteRows[i] = activeNotes[i][0];
       noteCols[i] = activeNotes[i][1];
@@ -84,7 +89,7 @@ const ExportCode = ({ noteGrid, oscillatorType, frequency = 440, tempo = 100 }) 
     })(new AudioContext())`;
     
     setExportCode(exportCode);
-  }, [noteGrid, oscillatorType, frequency, tempo]);
+  }, [noteGrid, settings, oscillatorType, frequency, tempo]);
 
   const handleCopyToClipboard = () => {
     navigator.clipboard.writeText(exportCode)

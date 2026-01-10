@@ -1,20 +1,34 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import './PlayButton.css';
+import { NoteGrid, Settings, PlayButtonProps } from '../types';
 
-const PlayButton = ({ noteGrid, setCurrentColumn, settings, currentColumn, startColumn }) => {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const audioContextRef = useRef(null);
-  const oscillatorsRef = useRef([]);
-  const animationFrameRef = useRef(null);
-  const startTimeRef = useRef(0);
+// PlayButtonProps is now imported from types/index.ts
 
-  const colRef = useRef(currentColumn);
+// Define the static property for the component
+interface PlayButtonStatic {
+  setStartingColumn?: (column: number) => void;
+}
+
+const PlayButton: React.FC<PlayButtonProps> & PlayButtonStatic = ({ 
+  noteGrid, 
+  setCurrentColumn, 
+  settings, 
+  currentColumn, 
+  startColumn 
+}) => {
+  const [isPlaying, setIsPlaying] = useState<boolean>(false);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const oscillatorsRef = useRef<OscillatorNode[]>([]);
+  const animationFrameRef = useRef<number | null>(null);
+  const startTimeRef = useRef<number>(0);
+
+  const colRef = useRef<number>(currentColumn);
 
   // Optimized for performance
 
   // Collect active notes
-  const collectActiveNotes = useCallback(() => {
-    const activeNotes = [];
+  const collectActiveNotes = useCallback((): [number, number][] => {
+    const activeNotes: [number, number][] = [];
     // Use the actual grid dimensions instead of hardcoded values
     for (let row = 1; row < noteGrid.length; row++) {
       if (noteGrid[row]) {
@@ -29,7 +43,7 @@ const PlayButton = ({ noteGrid, setCurrentColumn, settings, currentColumn, start
   }, [noteGrid]);
 
   // Use the grid dimensions instead of recalculating max column
-  const getMaxColumn = useCallback(() => {
+  const getMaxColumn = useCallback((): number => {
     let maxColumn = -1;
     for(const [_, col] of collectActiveNotes()) {
       maxColumn = Math.max(maxColumn, col);
@@ -68,7 +82,7 @@ const PlayButton = ({ noteGrid, setCurrentColumn, settings, currentColumn, start
   }, [setCurrentColumn, startColumn]);
   
   // Update the current column based on elapsed time
-  const updateCurrentColumn = useCallback((elapsedTime) => {
+  const updateCurrentColumn = useCallback((elapsedTime: number) => {
     // Calculate current column based on tempo (same conversion as in playComposition)
     const columnsPerSecond = settings.tempo / 20; // Convert tempo (BPM) to columns per second
     const column = Math.floor(elapsedTime * columnsPerSecond) + startColumn;
@@ -85,8 +99,10 @@ const PlayButton = ({ noteGrid, setCurrentColumn, settings, currentColumn, start
     } else {
       // Continue animation
       animationFrameRef.current = requestAnimationFrame(() => {
-        const newElapsedTime = (audioContextRef.current.currentTime - startTimeRef.current);
-        updateCurrentColumn(newElapsedTime);
+        if (audioContextRef.current) {
+          const newElapsedTime = (audioContextRef.current.currentTime - startTimeRef.current);
+          updateCurrentColumn(newElapsedTime);
+        }
       });
     }
   }, [getMaxColumn, stopPlayback, startColumn, settings.tempo, setCurrentColumn]);
@@ -122,19 +138,19 @@ const PlayButton = ({ noteGrid, setCurrentColumn, settings, currentColumn, start
       // Skip notes before the start column
       if (col < startColumn) return;
       
-      const osc = audioContextRef.current.createOscillator();
-      const gainNode = audioContextRef.current.createGain();
+      const osc = audioContextRef.current!.createOscillator();
+      const gainNode = audioContextRef.current!.createGain();
       
       // Connect oscillator to gain node and gain node to destination
       osc.connect(gainNode);
-      gainNode.connect(audioContextRef.current.destination);
+      gainNode.connect(audioContextRef.current!.destination);
       
       // Calculate frequency using equal temperament formula
       const semitoneOffset = middleC - row;
       osc.frequency.value = baseFrequency * Math.pow(semitoneRatio, semitoneOffset);
       
       // Set oscillator type
-      osc.type = settings.oscillatorType;
+      osc.type = settings.oscillatorType as OscillatorType;
       
       // Schedule start and stop times
       const startTime = (col - startColumn) / columnsPerSecond;
@@ -151,8 +167,10 @@ const PlayButton = ({ noteGrid, setCurrentColumn, settings, currentColumn, start
     
     // Start with a small delay to ensure UI updates first
     animationFrameRef.current = requestAnimationFrame(() => {
-      const elapsedTime = (audioContextRef.current.currentTime - startTimeRef.current);
-      updateCurrentColumn(elapsedTime);
+      if (audioContextRef.current) {
+        const elapsedTime = (audioContextRef.current.currentTime - startTimeRef.current);
+        updateCurrentColumn(elapsedTime);
+      }
     });
   }, [isPlaying, stopPlayback, setCurrentColumn, startColumn, collectActiveNotes, settings.frequency, settings.tempo, settings.oscillatorType, updateCurrentColumn]);
   
@@ -206,6 +224,12 @@ const PlayButton = ({ noteGrid, setCurrentColumn, settings, currentColumn, start
       </div>
     </div>
   );
+};
+
+// Add static method for setting starting column
+PlayButton.setStartingColumn = (column: number) => {
+  // This will be implemented by the parent component
+  console.log('Static method called with column:', column);
 };
 
 export default PlayButton;

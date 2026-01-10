@@ -1,17 +1,35 @@
 import React, { useRef, useState } from 'react';
 import './FileImportExport.css';
+import { FileImportExportProps, GridSize, NoteGrid, Settings } from '../types';
 
 const DEFAULT_SONG_NAME = 'My Composition';
 
-const FileImportExport = ({ noteGrid, gridSize, notesPerMeasure, settings, middleCPosition }) => {
-  const fileInputRef = useRef(null);
-  const [songName, setSongName] = useState(DEFAULT_SONG_NAME);
+interface GridData {
+  songName: string;
+  activeNotes: [number, number][];
+  gridSize: GridSize;
+  notesPerMeasure: number;
+  version: string;
+  settings: Settings;
+  middleCPosition: number;
+  timestamp: string;
+}
+
+const FileImportExport: React.FC<FileImportExportProps> = ({ 
+  noteGrid, 
+  gridSize, 
+  notesPerMeasure, 
+  settings, 
+  middleCPosition 
+}) => {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [songName, setSongName] = useState<string>(DEFAULT_SONG_NAME);
 
   // Export grid data to a JSON file
   const exportGrid = () => {
     try {
       // Collect only active notes to make the export file smaller
-      const activeNotes = [];
+      const activeNotes: [number, number][] = [];
       for (let row = 1; row < noteGrid.length; row++) {
         if (noteGrid[row]) {
           for (let col = 0; col < noteGrid[row].length; col++) {
@@ -26,7 +44,7 @@ const FileImportExport = ({ noteGrid, gridSize, notesPerMeasure, settings, middl
       const finalSongName = songName.trim() || DEFAULT_SONG_NAME;
       
       // Create a compact data object with only necessary information
-      const gridData = {
+      const gridData: GridData = {
         songName: finalSongName,
         activeNotes,
         gridSize,
@@ -65,16 +83,20 @@ const FileImportExport = ({ noteGrid, gridSize, notesPerMeasure, settings, middl
   };
 
   // Import grid data from a JSON file
-  const importGrid = (event) => {
+  const importGrid = (event: React.ChangeEvent<HTMLInputElement>) => {
     try {
-      const file = event.target.files[0];
+      const file = event.target.files?.[0];
       if (!file) return;
 
       const reader = new FileReader();
       
-      reader.onload = (e) => {
+      reader.onload = (e: ProgressEvent<FileReader>) => {
         try {
-          const savedFileData = JSON.parse(e.target.result);
+          if (!e.target?.result) {
+            throw new Error('Failed to read file content');
+          }
+          
+          const savedFileData = JSON.parse(e.target.result as string) as GridData;
           
           // Validate the imported data (only support new format)
           if (!savedFileData.activeNotes || !savedFileData.gridSize) {
@@ -83,7 +105,7 @@ const FileImportExport = ({ noteGrid, gridSize, notesPerMeasure, settings, middl
           
           // Reconstruct the noteGrid from activeNotes
           // Create a properly sized grid with all cells initialized to 0
-          const reconstructedGrid = [];
+          const reconstructedGrid: NoteGrid = [];
           for (let i = 0; i < savedFileData.gridSize.rows; i++) {
             reconstructedGrid[i] = [];
             for (let j = 0; j < savedFileData.gridSize.cols; j++) {
@@ -101,8 +123,8 @@ const FileImportExport = ({ noteGrid, gridSize, notesPerMeasure, settings, middl
           
           localStorage.clear();
           localStorage.setItem('songName', JSON.stringify(savedFileData.songName));
-          localStorage.setItem('musicGrid', JSON.stringify(reconstructedGrid))
-          localStorage.setItem('gridSize', JSON.stringify(savedFileData.gridSize))
+          localStorage.setItem('musicGrid', JSON.stringify(reconstructedGrid));
+          localStorage.setItem('gridSize', JSON.stringify(savedFileData.gridSize));
           localStorage.setItem('notesPerMeasure', JSON.stringify(savedFileData.notesPerMeasure));
           localStorage.setItem('settings', JSON.stringify(savedFileData.settings));
           localStorage.setItem('middleCPosition', JSON.stringify(savedFileData.middleCPosition));
@@ -124,12 +146,16 @@ const FileImportExport = ({ noteGrid, gridSize, notesPerMeasure, settings, middl
     }
     
     // Reset the file input
-    event.target.value = null;
+    if (event.target) {
+      event.target.value = '';
+    }
   };
 
   // Trigger file input click
   const handleImportClick = () => {
-    fileInputRef.current.click();
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
   };
 
   return (

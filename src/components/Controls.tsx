@@ -1,19 +1,20 @@
 import { useState } from 'react';
 import './Controls.css';
+import { ControlsProps, Settings } from '../types';
 
-const Controls = ({ onControlChange }) => {
+const Controls: React.FC<ControlsProps> = ({ onControlChange }) => {
   // Default values for settings
   const defaultOffset = 0;
   const defaultTempo = 100;
   const defaultOscillatorType = 'sine';
   
   // Use offset instead of direct frequency (0 offset = 440Hz)
-  const [offset, setOffset] = useState(defaultOffset);
-  const [tempo, setTempo] = useState(defaultTempo);
-  const [oscillatorType, setOscillatorType] = useState(defaultOscillatorType);
+  const [offset, setOffset] = useState<number>(defaultOffset);
+  const [tempo, setTempo] = useState<number>(defaultTempo);
+  const [oscillatorType, setOscillatorType] = useState<string>(defaultOscillatorType);
 
   // Handle offset change
-  const handleOffsetChange = (e) => {
+  const handleOffsetChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newOffset = parseInt(e.target.value, 10);
     setOffset(newOffset);
     if (onControlChange) {
@@ -24,7 +25,7 @@ const Controls = ({ onControlChange }) => {
   };
 
   // Handle tempo change
-  const handleTempoChange = (e) => {
+  const handleTempoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newTempo = parseInt(e.target.value, 10);
     setTempo(newTempo);
     if (onControlChange) {
@@ -35,7 +36,7 @@ const Controls = ({ onControlChange }) => {
   };
 
   // Handle oscillator type change
-  const handleOscillatorChange = (e) => {
+  const handleOscillatorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newOscillatorType = e.target.value;
     setOscillatorType(newOscillatorType);
     if (onControlChange) {

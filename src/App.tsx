@@ -4,10 +4,11 @@ import Controls from './components/Controls'
 import ExportCode from './components/ExportCode'
 import FileImportExport from './components/FileImportExport'
 import MusicGrid from './components/MusicGrid'
+import { GridSize, NoteGrid, Settings } from './types'
 
 const DEFAULT_MIDDLE_C_POSITION = 13;
 const DEFAULT_NOTES_PER_MEASURE = 8;
-const DEFAULT_GRID_SIZE = { rows: 26, cols: 50 };
+const DEFAULT_GRID_SIZE: GridSize = { rows: 26, cols: 50 };
 
 function App() {
   useEffect(() => {
@@ -17,19 +18,19 @@ function App() {
     const settings = localStorage.getItem('settings');
     const middleCPosition = localStorage.getItem('middleCPosition');
 
-    if (savedGrid != null && savedGrid != 'undefined') {
+    if (savedGrid != null && savedGrid !== 'undefined') {
       setNoteGrid(JSON.parse(savedGrid));
     }
-    if (savedGridSize != null && savedGridSize != 'undefined') {
+    if (savedGridSize != null && savedGridSize !== 'undefined') {
       setGridSize(JSON.parse(savedGridSize));
     }
-    if (savedNotesPerMeasure != null && savedNotesPerMeasure != 'undefined') {
+    if (savedNotesPerMeasure != null && savedNotesPerMeasure !== 'undefined') {
       setNotesPerMeasure(JSON.parse(savedNotesPerMeasure));
     }
-    if (settings != null && settings != 'undefined') {
+    if (settings != null && settings !== 'undefined') {
       setSettings(JSON.parse(settings));
     }
-    if (middleCPosition != null && middleCPosition != 'undefined') {
+    if (middleCPosition != null && middleCPosition !== 'undefined') {
       setMiddleCPosition(JSON.parse(middleCPosition));
     }
   }, []);
@@ -73,29 +74,31 @@ function App() {
   */
 
   // State for the note grid
-  const [noteGrid, setNoteGrid] = useState(Array(DEFAULT_GRID_SIZE.rows).fill().map(() => Array(DEFAULT_GRID_SIZE.cols).fill(0)))
+  const [noteGrid, setNoteGrid] = useState<NoteGrid>(
+    Array(DEFAULT_GRID_SIZE.rows).fill(null).map(() => Array(DEFAULT_GRID_SIZE.cols).fill(0))
+  );
   
   // State for grid dimensions and middle C position
-  const [gridSize, setGridSize] = useState(DEFAULT_GRID_SIZE)
-  const [notesPerMeasure, setNotesPerMeasure] = useState(DEFAULT_NOTES_PER_MEASURE)
-  const [middleCPosition, setMiddleCPosition] = useState(DEFAULT_MIDDLE_C_POSITION);
+  const [gridSize, setGridSize] = useState<GridSize>(DEFAULT_GRID_SIZE);
+  const [notesPerMeasure, setNotesPerMeasure] = useState<number>(DEFAULT_NOTES_PER_MEASURE);
+  const [middleCPosition, setMiddleCPosition] = useState<number>(DEFAULT_MIDDLE_C_POSITION);
   
   // State for control settings
-  const [settings, setSettings] = useState({
+  const [settings, setSettings] = useState<Settings>({
     frequency: 440,
     tempo: 100,
     oscillatorType: 'sine'
-  })
+  });
 
   // Handle control changes
-  const handleControlChange = (newSettings) => {
-    setSettings(newSettings)
-  }
+  const handleControlChange = (newSettings: Settings) => {
+    setSettings(newSettings);
+  };
 
   // Reset the grid to default size and clear all notes
   const resetGrid = () => {
     // Reset to default grid size
-    const newGrid = Array(DEFAULT_GRID_SIZE.rows).fill().map(() => Array(DEFAULT_GRID_SIZE.cols).fill(0));
+    const newGrid = Array(DEFAULT_GRID_SIZE.rows).fill(null).map(() => Array(DEFAULT_GRID_SIZE.cols).fill(0));
     setNoteGrid(newGrid);
     setGridSize(DEFAULT_GRID_SIZE);
     setMiddleCPosition(DEFAULT_MIDDLE_C_POSITION);
@@ -140,7 +143,7 @@ function App() {
         />
       </div>
     </div>
-  )
+  );
 }
 
-export default App
+export default App;

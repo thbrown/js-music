@@ -1,28 +1,59 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import './MusicGrid.css';
 import PlayButton from './PlayButton';
+import { MusicGridProps, GridSize } from '../types';
 
+// Define additional types needed for this component
+interface GridCellProps {
+  row: number;
+  col: number;
+  backgroundColor: string;
+  textColor: string;
+  content: string;
+  isHighlighted: boolean;
+  isStartColumn: boolean;
+  isMeasureStart: boolean;
+  onClick: () => void;
+  style?: React.CSSProperties;
+}
 
-const MusicGrid = ({ noteGrid, setNoteGrid, settings, gridSize, notesPerMeasure, setGridSize, setNotesPerMeasure, middleCPosition, setMiddleCPosition, resetGrid }) => {
-  const gridContainerRef = useRef(null);
+// Extend the PlayButton with static properties
+interface PlayButtonWithStatic extends React.FC<any> {
+  setStartingColumn?: (column: number) => void;
+}
+
+const MusicGrid: React.FC<MusicGridProps> = ({ 
+  noteGrid, 
+  setNoteGrid, 
+  settings, 
+  gridSize, 
+  notesPerMeasure, 
+  setGridSize, 
+  setNotesPerMeasure, 
+  middleCPosition, 
+  setMiddleCPosition, 
+  resetGrid 
+}) => {
+  const gridContainerRef = useRef<HTMLDivElement>(null);
   
-  const [currentColumn, setCurrentColumn] = useState(-1);
-  const [startColumn, setStartColumn] = useState(1);
+  const [currentColumn, setCurrentColumn] = useState<number>(-1);
+  const [startColumn, setStartColumn] = useState<number>(1);
 
   // Handle column click to set starting position
-  const handleColumnClick = (col) => {
+  const handleColumnClick = (col: number) => {
     // Only handle clicks on column headers (row 0)
     if (col >= 1) {
       setStartColumn(col);
       // Also update the PlayButton component if it's available
-      if (PlayButton.setStartingColumn) {
-        PlayButton.setStartingColumn(col);
+      const playButtonWithStatic = PlayButton as PlayButtonWithStatic;
+      if (playButtonWithStatic.setStartingColumn) {
+        playButtonWithStatic.setStartingColumn(col);
       }
     }
   };
   
   // Handle notes per measure update
-  const updateNotesPerMeasure = (value) => {
+  const updateNotesPerMeasure = (value: number) => {
     if (value >= 1) {
       setNotesPerMeasure(value);
       localStorage.setItem('notesPerMeasure', JSON.stringify(value));
@@ -30,7 +61,7 @@ const MusicGrid = ({ noteGrid, setNoteGrid, settings, gridSize, notesPerMeasure,
   };
 
   // Toggle note state - optimized with useCallback
-  const toggleNote = useCallback((row, col) => {
+  const toggleNote = useCallback((row: number, col: number) => {
     // Start timing
     const startTime = performance.now();
     
@@ -60,7 +91,7 @@ const MusicGrid = ({ noteGrid, setNoteGrid, settings, gridSize, notesPerMeasure,
   }, [noteGrid, setNoteGrid]);
 
   // Get note name based on position - wrapped in useCallback to prevent unnecessary recalculations
-  const getNoteName = useCallback((row) => {
+  const getNoteName = useCallback((row: number): string => {
     // C4 (middle C) is at middleCPosition
     // For ascending order, we need to invert the row calculation
     // Higher row numbers should be lower notes
@@ -75,10 +106,21 @@ const MusicGrid = ({ noteGrid, setNoteGrid, settings, gridSize, notesPerMeasure,
     // Note names in order from C (0) to B (11)
     const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
     return noteNames[notePosition] + octave;
-  }, []);
+  }, [middleCPosition]);
 
   // Create a memoized GridCell component to prevent unnecessary re-renders
-  const GridCell = memo(({ row, col, backgroundColor, textColor, content, isHighlighted, isStartColumn, isMeasureStart, onClick, style }) => {
+  const GridCell = memo<GridCellProps>(({ 
+    row, 
+    col, 
+    backgroundColor, 
+    textColor, 
+    content, 
+    isHighlighted, 
+    isStartColumn, 
+    isMeasureStart, 
+    onClick, 
+    style 
+  }) => {
     return (
       <div 
         key={`note_${row}_${col}`}
@@ -92,7 +134,7 @@ const MusicGrid = ({ noteGrid, setNoteGrid, settings, gridSize, notesPerMeasure,
           justifyContent: 'center',
           alignItems: 'center',
           fontSize: col === 0 ? '10px' : 'inherit',
-          borderLeft: isStartColumn && col > 0 ? '2px solid #4CAF50' : null,
+          borderLeft: isStartColumn && col > 0 ? '2px solid #4CAF50' : undefined,
           ...style
         }}
       >
@@ -103,7 +145,7 @@ const MusicGrid = ({ noteGrid, setNoteGrid, settings, gridSize, notesPerMeasure,
   
   // Render the grid - memoized with useCallback
   const renderGrid = useCallback(() => {
-    const gridElements = [];
+    const gridElements: React.ReactNode[] = [];
     
     // Add column headers (row 0) for setting starting position
     for (let col = 0; col < gridSize.cols; col++) {
@@ -213,7 +255,7 @@ const MusicGrid = ({ noteGrid, setNoteGrid, settings, gridSize, notesPerMeasure,
   }, [gridSize.cols, gridSize.rows, startColumn, currentColumn, middleCPosition, notesPerMeasure, getNoteName, noteGrid, toggleNote]);
 
   // Handle grid size changes
-  const updateGridSize = (newRows, newCols, addToTop = false) => {
+  const updateGridSize = (newRows: number, newCols: number, addToTop = false) => {
     let newGrid;
     let newMiddleCPosition = middleCPosition;
     
@@ -223,7 +265,7 @@ const MusicGrid = ({ noteGrid, setNoteGrid, settings, gridSize, notesPerMeasure,
       newMiddleCPosition = middleCPosition + rowsToAdd;
       
       // Create new grid with empty rows at the top
-      newGrid = Array(newRows).fill().map((_, rowIndex) => {
+      newGrid = Array(newRows).fill(null).map((_, rowIndex) => {
         if (rowIndex < rowsToAdd) {
           // New empty rows at the top
           return Array(newCols).fill(0);
@@ -231,18 +273,18 @@ const MusicGrid = ({ noteGrid, setNoteGrid, settings, gridSize, notesPerMeasure,
           // Copy existing rows
           const existingRowIndex = rowIndex - rowsToAdd;
           const existingRow = noteGrid[existingRowIndex] || [];
-          return Array(newCols).fill().map((_, colIndex) => 
+          return Array(newCols).fill(null).map((_, colIndex) => 
             colIndex < existingRow.length ? existingRow[colIndex] : 0
           );
         }
       });
     } else {
       // Adding rows to the bottom or adjusting columns
-      newGrid = Array(newRows).fill().map((_, rowIndex) => {
+      newGrid = Array(newRows).fill(null).map((_, rowIndex) => {
         if (rowIndex < noteGrid.length) {
           // Copy existing row data and extend if needed
           const existingRow = noteGrid[rowIndex] || [];
-          return Array(newCols).fill().map((_, colIndex) => 
+          return Array(newCols).fill(null).map((_, colIndex) => 
             colIndex < existingRow.length ? existingRow[colIndex] : 0
           );
         } else {
@@ -265,13 +307,12 @@ const MusicGrid = ({ noteGrid, setNoteGrid, settings, gridSize, notesPerMeasure,
   
   // Pass the starting column to PlayButton when it changes
   useEffect(() => {
-    if (PlayButton.setStartingColumn) {
-      PlayButton.setStartingColumn(startColumn);
+    const playButtonWithStatic = PlayButton as PlayButtonWithStatic;
+    if (playButtonWithStatic.setStartingColumn) {
+      playButtonWithStatic.setStartingColumn(startColumn);
     }
   }, [startColumn]);
   
-  // No debug logging needed
-
   // Calculate container width based on grid size
   const containerStyle = {
     width: `${gridSize.cols * 30}px`, // Each note is 30px wide
