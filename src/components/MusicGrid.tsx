@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import './MusicGrid.css';
 import PlayButton from './PlayButton';
 import GridCanvas from './GridCanvas';
+import MeasureContextMenu from './MeasureContextMenu';
 import { MusicGridProps } from '../types';
 import { playNote } from '../utils/audio';
 
@@ -26,6 +27,86 @@ const MusicGrid: React.FC<MusicGridProps> = ({
 
   const [currentColumn, setCurrentColumn] = useState<number>(-1);
   const [startColumn, setStartColumn] = useState<number>(1);
+
+  // Context menu state
+  const [contextMenu, setContextMenu] = useState<{
+    visible: boolean;
+    x: number;
+    y: number;
+    targetMeasure: number;
+  }>({ visible: false, x: 0, y: 0, targetMeasure: 0 });
+
+  // Handle right-click on measure
+  const handleMeasureRightClick = useCallback((measureIndex: number, x: number, y: number) => {
+    setContextMenu({ visible: true, x, y, targetMeasure: measureIndex });
+  }, []);
+
+  // Close context menu
+  const closeContextMenu = useCallback(() => {
+    setContextMenu(prev => ({ ...prev, visible: false }));
+  }, []);
+
+  // Check if a measure has any notes
+  const measureHasNotes = useCallback((measureIndex: number): boolean => {
+    const startCol = measureIndex * notesPerMeasure + 1;
+    const endCol = Math.min(startCol + notesPerMeasure, gridSize.cols);
+
+    for (let row = 1; row < gridSize.rows; row++) {
+      for (let col = startCol; col < endCol; col++) {
+        if (noteGrid[row]?.[col] === 1) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }, [noteGrid, notesPerMeasure, gridSize]);
+
+  // Copy measures from source to target
+  const handleCopyMeasures = useCallback((sourceMeasure: number, targetMeasure: number, count: number) => {
+    // Check if any target measures have notes
+    let targetHasNotes = false;
+    for (let i = 0; i < count; i++) {
+      if (measureHasNotes(targetMeasure + i)) {
+        targetHasNotes = true;
+        break;
+      }
+    }
+
+    // Confirm if overwriting
+    if (targetHasNotes) {
+      const targetRange = count === 1
+        ? `measure ${targetMeasure + 1}`
+        : `measures ${targetMeasure + 1}–${targetMeasure + count}`;
+      if (!window.confirm(`Overwrite notes in ${targetRange}?`)) {
+        return;
+      }
+    }
+
+    // Perform the copy
+    const newGrid = noteGrid.map(row => row ? [...row] : []);
+
+    for (let m = 0; m < count; m++) {
+      const srcStartCol = (sourceMeasure + m) * notesPerMeasure + 1;
+      const tgtStartCol = (targetMeasure + m) * notesPerMeasure + 1;
+
+      for (let row = 1; row < gridSize.rows; row++) {
+        if (!newGrid[row]) newGrid[row] = [];
+
+        for (let offset = 0; offset < notesPerMeasure; offset++) {
+          const srcCol = srcStartCol + offset;
+          const tgtCol = tgtStartCol + offset;
+
+          if (tgtCol < gridSize.cols) {
+            newGrid[row][tgtCol] = noteGrid[row]?.[srcCol] ?? 0;
+          }
+        }
+      }
+    }
+
+    localStorage.setItem('musicGrid', JSON.stringify(newGrid));
+    setNoteGrid(newGrid);
+    closeContextMenu();
+  }, [noteGrid, notesPerMeasure, gridSize, measureHasNotes, setNoteGrid, closeContextMenu]);
 
   // Handle column click to set starting position
   const handleColumnClick = (col: number) => {
@@ -350,6 +431,21 @@ const MusicGrid: React.FC<MusicGridProps> = ({
         </div>
       </div>
 
+      {/* Playback Controls */}
+      <PlayButton
+        noteGrid={noteGrid}
+        settings={settings}
+        middleCPosition={middleCPosition}
+        currentColumn={currentColumn}
+        setCurrentColumn={setCurrentColumn}
+        startColumn={startColumn}
+        setStartColumn={setStartColumn}
+        onReset={() => {
+          resetGrid();
+          setStartColumn(1);
+        }}
+      />
+
       {/* Music Grid - Hybrid DOM/Canvas Layout */}
       <div className="grid-wrapper">
         <div className="grid-container" ref={gridContainerRef} style={containerStyle}>
@@ -374,25 +470,25 @@ const MusicGrid: React.FC<MusicGridProps> = ({
               notesPerMeasure={notesPerMeasure}
               middleCPosition={middleCPosition}
               onToggleNote={toggleNote}
+              onMeasureRightClick={handleMeasureRightClick}
             />
           </div>
         </div>
       </div>
 
-      {/* Playback Controls */}
-      <PlayButton
-        noteGrid={noteGrid}
-        settings={settings}
-        middleCPosition={middleCPosition}
-        currentColumn={currentColumn}
-        setCurrentColumn={setCurrentColumn}
-        startColumn={startColumn}
-        setStartColumn={setStartColumn}
-        onReset={() => {
-          resetGrid();
-          setStartColumn(1);
-        }}
-      />
+      {/* Measure Copy Context Menu */}
+      {contextMenu.visible && (
+        <MeasureContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          targetMeasure={contextMenu.targetMeasure}
+          noteGrid={noteGrid}
+          notesPerMeasure={notesPerMeasure}
+          gridSize={gridSize}
+          onCopy={handleCopyMeasures}
+          onClose={closeContextMenu}
+        />
+      )}
     </div>
   );
 };

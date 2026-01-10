@@ -10,6 +10,7 @@ interface GridCanvasProps {
   notesPerMeasure: number;
   middleCPosition: number;
   onToggleNote: (row: number, col: number) => void;
+  onMeasureRightClick?: (measureIndex: number, x: number, y: number) => void;
 }
 
 const GridCanvas: React.FC<GridCanvasProps> = ({
@@ -20,8 +21,9 @@ const GridCanvas: React.FC<GridCanvasProps> = ({
   notesPerMeasure,
   middleCPosition,
   onToggleNote,
+  onMeasureRightClick,
 }) => {
-  const { canvasRef, handleCanvasClick, canvasWidth, canvasHeight } = useCanvasGrid({
+  const { canvasRef, handleCanvasClick, handleCanvasContextMenu, canvasWidth, canvasHeight } = useCanvasGrid({
     noteGrid,
     gridSize,
     currentColumn,
@@ -29,6 +31,7 @@ const GridCanvas: React.FC<GridCanvasProps> = ({
     notesPerMeasure,
     middleCPosition,
     onToggleNote,
+    onMeasureRightClick,
   });
 
   return (
@@ -37,6 +40,7 @@ const GridCanvas: React.FC<GridCanvasProps> = ({
       width={canvasWidth}
       height={canvasHeight}
       onClick={handleCanvasClick}
+      onContextMenu={handleCanvasContextMenu}
       className="grid-canvas"
       style={{ display: 'block', cursor: 'pointer' }}
     />

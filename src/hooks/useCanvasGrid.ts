@@ -23,6 +23,7 @@ interface UseCanvasGridProps {
   notesPerMeasure: number;
   middleCPosition: number;
   onToggleNote: (row: number, col: number) => void;
+  onMeasureRightClick?: (measureIndex: number, x: number, y: number) => void;
 }
 
 export function useCanvasGrid({
@@ -33,6 +34,7 @@ export function useCanvasGrid({
   notesPerMeasure,
   middleCPosition,
   onToggleNote,
+  onMeasureRightClick,
 }: UseCanvasGridProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -180,6 +182,26 @@ export function useCanvasGrid({
     }
   }, [gridSize, onToggleNote]);
 
+  // Handle right-click for measure context menu
+  const handleCanvasContextMenu = useCallback((event: React.MouseEvent<HTMLCanvasElement>) => {
+    event.preventDefault();
+
+    if (!onMeasureRightClick) return;
+
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+
+    // Convert to column, then to measure index
+    const col = Math.floor(x / CELL_WIDTH) + 1;
+    const measureIndex = Math.floor((col - 1) / notesPerMeasure);
+
+    // Pass screen coordinates for menu positioning
+    onMeasureRightClick(measureIndex, event.clientX, event.clientY);
+  }, [notesPerMeasure, onMeasureRightClick]);
+
   // Re-render when dependencies change
   useEffect(() => {
     renderGrid();
@@ -188,6 +210,7 @@ export function useCanvasGrid({
   return {
     canvasRef,
     handleCanvasClick,
+    handleCanvasContextMenu,
     canvasWidth: (gridSize.cols - 1) * CELL_WIDTH,
     canvasHeight: (gridSize.rows - 1) * CELL_HEIGHT,
   };
