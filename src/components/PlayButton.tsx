@@ -86,7 +86,6 @@ const PlayButton: React.FC<PlayButtonProps> & PlayButtonStatic = ({
     // Calculate current column based on tempo (same conversion as in playComposition)
     const columnsPerSecond = settings.tempo / 20; // Convert tempo (BPM) to columns per second
     const column = Math.floor(elapsedTime * columnsPerSecond) + startColumn;
-    console.log('Updating current column', elapsedTime, column, getMaxColumn());
 
     if (column !== colRef.current) {
       setCurrentColumn(column);

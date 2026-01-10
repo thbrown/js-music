@@ -17,10 +17,35 @@
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
-.grid-container { 
+.grid-container {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   position: relative;
+}
+
+/* Column headers row */
+.column-headers-row {
+  display: flex;
+  flex-shrink: 0;
+}
+
+/* Grid body: labels + canvas */
+.grid-body {
+  display: flex;
+}
+
+/* Left sticky column with note labels */
+.note-labels-column {
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  left: 0;
+  z-index: 10;
+}
+
+/* Canvas element */
+.grid-canvas {
+  display: block;
 }
 
 .note { 
