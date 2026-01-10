@@ -96,20 +96,30 @@
   transition: all 0.2s ease;
 }
 
-.note-header:hover:not(.note-label) {
-  background-color: #ddd !important;
+.note-header:hover:not(.note-label):not(.start-column) {
+  background-color: #ddd;
   box-shadow: 0 0 5px rgba(0,0,0,0.2);
 }
 
-.note-header.start-column {
-  background-color: #4CAF50 !important;
-  color: white !important;
-  box-shadow: 0 0 5px rgba(76, 175, 80, 0.5);
+/* Measure number headers */
+.note-header.measure-start-header {
+  font-weight: 600;
+  color: #667eea;
+  background-color: #f0f0ff;
+  border-left: 2px solid rgba(75, 0, 130, 0.6);
 }
 
-/* Start column indicator */
-.start-column {
-  border-left: 2px solid #4CAF50 !important;
+/* Start column indicator - must come after measure-start-header to override */
+.note-header.start-column {
+  background-color: #4CAF50;
+  color: white;
+  box-shadow: 0 0 5px rgba(76, 175, 80, 0.5);
+  border-left: 2px solid #4CAF50;
+}
+
+/* Start column indicator for non-header cells */
+.note.start-column:not(.note-header) {
+  border-left: 2px solid #4CAF50;
 }
 
 /* Grey line styling */

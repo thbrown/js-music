@@ -62,23 +62,25 @@ const MusicGrid: React.FC<MusicGridProps> = ({
   }, [noteGrid, notesPerMeasure, gridSize]);
 
   // Copy measures from source to target
-  const handleCopyMeasures = useCallback((sourceMeasure: number, targetMeasure: number, count: number) => {
-    // Check if any target measures have notes
-    let targetHasNotes = false;
-    for (let i = 0; i < count; i++) {
-      if (measureHasNotes(targetMeasure + i)) {
-        targetHasNotes = true;
-        break;
+  const handleCopyMeasures = useCallback((sourceMeasure: number, targetMeasure: number, count: number, transparent: boolean) => {
+    // Check if any target measures have notes (only for non-transparent mode)
+    if (!transparent) {
+      let targetHasNotes = false;
+      for (let i = 0; i < count; i++) {
+        if (measureHasNotes(targetMeasure + i)) {
+          targetHasNotes = true;
+          break;
+        }
       }
-    }
 
-    // Confirm if overwriting
-    if (targetHasNotes) {
-      const targetRange = count === 1
-        ? `measure ${targetMeasure + 1}`
-        : `measures ${targetMeasure + 1}–${targetMeasure + count}`;
-      if (!window.confirm(`Overwrite notes in ${targetRange}?`)) {
-        return;
+      // Confirm if overwriting
+      if (targetHasNotes) {
+        const targetRange = count === 1
+          ? `measure ${targetMeasure + 1}`
+          : `measures ${targetMeasure + 1}–${targetMeasure + count}`;
+        if (!window.confirm(`Overwrite notes in ${targetRange}?`)) {
+          return;
+        }
       }
     }
 
@@ -97,7 +99,16 @@ const MusicGrid: React.FC<MusicGridProps> = ({
           const tgtCol = tgtStartCol + offset;
 
           if (tgtCol < gridSize.cols) {
-            newGrid[row][tgtCol] = noteGrid[row]?.[srcCol] ?? 0;
+            const srcValue = noteGrid[row]?.[srcCol] ?? 0;
+            if (transparent) {
+              // Transparent mode: only add notes, don't remove existing
+              if (srcValue === 1) {
+                newGrid[row][tgtCol] = 1;
+              }
+            } else {
+              // Normal mode: overwrite completely
+              newGrid[row][tgtCol] = srcValue;
+            }
           }
         }
       }
@@ -107,6 +118,29 @@ const MusicGrid: React.FC<MusicGridProps> = ({
     setNoteGrid(newGrid);
     closeContextMenu();
   }, [noteGrid, notesPerMeasure, gridSize, measureHasNotes, setNoteGrid, closeContextMenu]);
+
+  // Clear all notes from a measure
+  const handleClearMeasure = useCallback((measureIndex: number) => {
+    if (!window.confirm(`Clear all notes from measure ${measureIndex + 1}?`)) {
+      return;
+    }
+
+    const startCol = measureIndex * notesPerMeasure + 1;
+    const endCol = Math.min(startCol + notesPerMeasure, gridSize.cols);
+
+    const newGrid = noteGrid.map(row => row ? [...row] : []);
+
+    for (let row = 1; row < gridSize.rows; row++) {
+      if (!newGrid[row]) continue;
+      for (let col = startCol; col < endCol; col++) {
+        newGrid[row][col] = 0;
+      }
+    }
+
+    localStorage.setItem('musicGrid', JSON.stringify(newGrid));
+    setNoteGrid(newGrid);
+    closeContextMenu();
+  }, [noteGrid, notesPerMeasure, gridSize, setNoteGrid, closeContextMenu]);
 
   // Handle column click to set starting position
   const handleColumnClick = (col: number) => {
@@ -187,6 +221,9 @@ const MusicGrid: React.FC<MusicGridProps> = ({
     for (let col = 0; col < gridSize.cols; col++) {
       const isStart = col === startColumn;
       const isCurrent = col === currentColumn;
+      // Check if this is the first column of a measure (col 1, 1+notesPerMeasure, etc.)
+      const isMeasureStart = col > 0 && (col - 1) % notesPerMeasure === 0;
+      const measureNumber = isMeasureStart ? Math.floor((col - 1) / notesPerMeasure) + 1 : null;
 
       if (col === 0) {
         headers.push(
@@ -201,14 +238,14 @@ const MusicGrid: React.FC<MusicGridProps> = ({
               fontSize: '10px'
             }}
           >
-            Start
+            M
           </div>
         );
       } else {
         headers.push(
           <div
             key={`header_${col}`}
-            className={`note note-header ${isStart ? 'start-column' : ''} ${isCurrent ? 'highlighted' : ''}`}
+            className={`note note-header ${isStart ? 'start-column' : ''} ${isCurrent ? 'highlighted' : ''} ${isMeasureStart ? 'measure-start-header' : ''}`}
             onClick={() => handleColumnClick(col)}
             style={{
               backgroundColor: isStart ? '#4CAF50' : '#eee',
@@ -220,14 +257,14 @@ const MusicGrid: React.FC<MusicGridProps> = ({
               cursor: 'pointer'
             }}
           >
-            {isStart ? '▶' : ''}
+            {isStart ? '▶' : measureNumber || ''}
           </div>
         );
       }
     }
 
     return headers;
-  }, [gridSize.cols, startColumn, currentColumn]);
+  }, [gridSize.cols, startColumn, currentColumn, notesPerMeasure]);
 
   // Render note labels (column 0) - stays as DOM for sticky positioning
   // Clicking a label plays that note
@@ -486,6 +523,7 @@ const MusicGrid: React.FC<MusicGridProps> = ({
           notesPerMeasure={notesPerMeasure}
           gridSize={gridSize}
           onCopy={handleCopyMeasures}
+          onClear={handleClearMeasure}
           onClose={closeContextMenu}
         />
       )}
