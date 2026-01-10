@@ -220,12 +220,40 @@ const MusicGrid: React.FC<MusicGridProps> = ({
     setMiddleCPosition(newMiddleCPosition);
   };
 
+  // Check if specific rows contain any notes
+  const rowsHaveNotes = (startRow: number, endRow: number): boolean => {
+    for (let row = startRow; row < endRow; row++) {
+      if (noteGrid[row]?.some(cell => cell === 1)) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  // Check if columns beyond a certain point contain notes
+  const colsHaveNotes = (startCol: number): boolean => {
+    return noteGrid.some(row => {
+      if (!row) return false;
+      for (let col = startCol; col < row.length; col++) {
+        if (row[col] === 1) return true;
+      }
+      return false;
+    });
+  };
+
   // Remove rows from the top of the grid
   const removeRowsFromTop = (count: number) => {
     const newRows = Math.max(6, gridSize.rows - count);
     const rowsToRemove = gridSize.rows - newRows;
 
     if (rowsToRemove <= 0) return;
+
+    // Check if rows being removed have notes
+    if (rowsHaveNotes(0, rowsToRemove)) {
+      if (!window.confirm(`Remove ${rowsToRemove} high notes? This will delete notes in those rows.`)) {
+        return;
+      }
+    }
 
     // Remove rows from the beginning and adjust middleCPosition
     const newMiddleCPosition = middleCPosition - rowsToRemove;
@@ -238,6 +266,39 @@ const MusicGrid: React.FC<MusicGridProps> = ({
     setNoteGrid(newGrid);
     setGridSize({ rows: newRows, cols: gridSize.cols });
     setMiddleCPosition(newMiddleCPosition);
+  };
+
+  // Remove rows from the bottom of the grid
+  const removeRowsFromBottom = (count: number) => {
+    const newRows = Math.max(6, gridSize.rows - count);
+    const rowsToRemove = gridSize.rows - newRows;
+
+    if (rowsToRemove <= 0) return;
+
+    // Check if rows being removed have notes
+    if (rowsHaveNotes(newRows, gridSize.rows)) {
+      if (!window.confirm(`Remove ${rowsToRemove} low notes? This will delete notes in those rows.`)) {
+        return;
+      }
+    }
+
+    updateGridSize(newRows, gridSize.cols, false);
+  };
+
+  // Remove columns from the end of the grid
+  const removeColumns = (count: number) => {
+    const newCols = Math.max(50, gridSize.cols - count);
+
+    if (newCols >= gridSize.cols) return;
+
+    // Check if columns being removed have notes
+    if (colsHaveNotes(newCols)) {
+      if (!window.confirm(`Shorten the song? This will delete notes beyond column ${newCols}.`)) {
+        return;
+      }
+    }
+
+    updateGridSize(gridSize.rows, newCols, false);
   };
 
   // Pass the starting column to PlayButton when it changes
@@ -266,7 +327,7 @@ const MusicGrid: React.FC<MusicGridProps> = ({
         <div className="control-group">
           <label>Low notes: </label>
           <button onClick={() => updateGridSize(gridSize.rows + 5, gridSize.cols, false)} title="Add 5 lower notes">+</button>
-          <button onClick={() => updateGridSize(Math.max(6, gridSize.rows - 5), gridSize.cols, false)} title="Remove 5 lower notes">−</button>
+          <button onClick={() => removeRowsFromBottom(5)} title="Remove 5 lower notes">−</button>
         </div>
 
         <div className="control-group">
@@ -278,7 +339,7 @@ const MusicGrid: React.FC<MusicGridProps> = ({
           <label>Length: </label>
           <button onClick={() => updateGridSize(gridSize.rows, gridSize.cols + 50)} title="Increase song length">+</button>
           <span>{gridSize.cols}</span>
-          <button onClick={() => updateGridSize(gridSize.rows, Math.max(50, gridSize.cols - 50))} title="Decrease song length">-</button>
+          <button onClick={() => removeColumns(50)} title="Decrease song length">−</button>
         </div>
 
         <div className="control-group">

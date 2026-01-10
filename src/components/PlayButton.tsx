@@ -220,7 +220,13 @@ const PlayButton: React.FC<PlayButtonProps> & PlayButtonStatic = ({
       {/* Reset button */}
       <button
         className="reset-btn"
-        onClick={onReset}
+        onClick={() => {
+          // Check if there are any notes
+          const hasNotes = noteGrid.some(row => row?.some(cell => cell === 1));
+          if (!hasNotes || window.confirm('Clear all notes and reset start position?')) {
+            onReset();
+          }
+        }}
         title="Clear all notes and reset start position"
         disabled={isPlaying}
       >
