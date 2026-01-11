@@ -5,6 +5,13 @@ import GridCanvas from './GridCanvas';
 import MeasureContextMenu from './MeasureContextMenu';
 import { MusicGridProps } from '../types';
 import { playNote } from '../utils/audio';
+import {
+  findNoteStart,
+  createNote,
+  deleteNote,
+  mergeAdjacentNotes,
+  isActiveCell,
+} from '../utils/noteHelpers';
 
 // Extend the PlayButton with static properties
 interface PlayButtonWithStatic extends React.FC<any> {
@@ -53,7 +60,7 @@ const MusicGrid: React.FC<MusicGridProps> = ({
 
     for (let row = 1; row < gridSize.rows; row++) {
       for (let col = startCol; col < endCol; col++) {
-        if (noteGrid[row]?.[col] === 1) {
+        if (isActiveCell(noteGrid, row, col)) {
           return true;
         }
       }
@@ -84,7 +91,7 @@ const MusicGrid: React.FC<MusicGridProps> = ({
       }
     }
 
-    // Perform the copy
+    // Perform the copy - handle duration-based notes
     const newGrid = noteGrid.map(row => row ? [...row] : []);
 
     for (let m = 0; m < count; m++) {
@@ -101,9 +108,14 @@ const MusicGrid: React.FC<MusicGridProps> = ({
           if (tgtCol < gridSize.cols) {
             const srcValue = noteGrid[row]?.[srcCol] ?? 0;
             if (transparent) {
-              // Transparent mode: only add notes, don't remove existing
-              if (srcValue === 1) {
-                newGrid[row][tgtCol] = 1;
+              // Transparent mode: only add notes where there's a note start
+              if (srcValue > 0) {
+                // It's a note start - copy it with its duration
+                newGrid[row][tgtCol] = srcValue;
+                // Copy continuation cells
+                for (let i = 1; i < srcValue && tgtCol + i < gridSize.cols; i++) {
+                  newGrid[row][tgtCol + i] = -1;
+                }
               }
             } else {
               // Normal mode: overwrite completely
@@ -171,28 +183,41 @@ const MusicGrid: React.FC<MusicGridProps> = ({
     });
   }, [middleCPosition, settings.frequency, settings.oscillatorType]);
 
-  // Toggle note state
+  // Toggle note state - supports duration-based notes
   const toggleNote = useCallback((row: number, col: number) => {
     if (col === 0) return;
 
-    const newGrid = [...noteGrid];
-    if (!newGrid[row]) {
-      newGrid[row] = [];
+    const cellValue = noteGrid[row]?.[col] ?? 0;
+
+    if (cellValue !== 0) {
+      // Clicking on an active cell (start or continuation) - delete entire note
+      const noteStart = findNoteStart(noteGrid, row, col) ?? col;
+      const newGrid = deleteNote(noteGrid, row, noteStart);
+
+      localStorage.setItem('musicGrid', JSON.stringify(newGrid));
+      setNoteGrid(newGrid);
     } else {
-      newGrid[row] = [...newGrid[row]];
-    }
+      // Clicking on empty cell - create single-beat note (duration 1)
+      const newGrid = createNote(noteGrid, row, col, 1);
 
-    const wasActive = newGrid[row][col] === 1;
-    newGrid[row][col] = wasActive ? 0 : 1;
-
-    // Play the note when activating it
-    if (!wasActive) {
+      // Play the note when activating
       playSingleNote(row);
-    }
 
-    localStorage.setItem('musicGrid', JSON.stringify(newGrid));
-    setNoteGrid(newGrid);
+      localStorage.setItem('musicGrid', JSON.stringify(newGrid));
+      setNoteGrid(newGrid);
+    }
   }, [noteGrid, setNoteGrid, playSingleNote]);
+
+  // Handle right-click on a note to merge adjacent notes
+  const handleNoteRightClick = useCallback((row: number, col: number) => {
+    const newGrid = mergeAdjacentNotes(noteGrid, row, col);
+
+    // Only save if something changed
+    if (newGrid !== noteGrid) {
+      localStorage.setItem('musicGrid', JSON.stringify(newGrid));
+      setNoteGrid(newGrid);
+    }
+  }, [noteGrid, setNoteGrid]);
 
   // Get note name based on position
   const getNoteName = useCallback((row: number): string => {
@@ -235,11 +260,16 @@ const MusicGrid: React.FC<MusicGridProps> = ({
           </div>
         );
       } else {
+        const measureIndex = Math.floor((col - 1) / notesPerMeasure);
         headers.push(
           <div
             key={`header_${col}`}
             className={`note note-header note-header-cell ${isStart ? 'start-column' : ''} ${isCurrent ? 'highlighted' : ''} ${isMeasureStart ? 'measure-start-header' : ''}`}
             onClick={() => handleColumnClick(col)}
+            onContextMenu={(e) => {
+              e.preventDefault();
+              handleMeasureRightClick(measureIndex, e.clientX, e.clientY);
+            }}
           >
             {isStart ? '▶' : measureNumber || ''}
           </div>
@@ -248,7 +278,7 @@ const MusicGrid: React.FC<MusicGridProps> = ({
     }
 
     return headers;
-  }, [gridSize.cols, startColumn, currentColumn, notesPerMeasure]);
+  }, [gridSize.cols, startColumn, currentColumn, notesPerMeasure, handleMeasureRightClick]);
 
   // Render note labels (column 0) - stays as DOM for sticky positioning
   // Clicking a label plays that note
@@ -316,7 +346,7 @@ const MusicGrid: React.FC<MusicGridProps> = ({
   // Check if specific rows contain any notes
   const rowsHaveNotes = (startRow: number, endRow: number): boolean => {
     for (let row = startRow; row < endRow; row++) {
-      if (noteGrid[row]?.some(cell => cell === 1)) {
+      if (noteGrid[row]?.some(cell => cell !== 0)) {
         return true;
       }
     }
@@ -328,7 +358,7 @@ const MusicGrid: React.FC<MusicGridProps> = ({
     return noteGrid.some(row => {
       if (!row) return false;
       for (let col = startCol; col < row.length; col++) {
-        if (row[col] === 1) return true;
+        if (row[col] !== 0) return true;
       }
       return false;
     });
@@ -482,7 +512,7 @@ const MusicGrid: React.FC<MusicGridProps> = ({
               notesPerMeasure={notesPerMeasure}
               middleCPosition={middleCPosition}
               onToggleNote={toggleNote}
-              onMeasureRightClick={handleMeasureRightClick}
+              onNoteRightClick={handleNoteRightClick}
             />
           </div>
         </div>

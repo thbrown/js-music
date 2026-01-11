@@ -1,5 +1,6 @@
 import { useRef, useEffect, useCallback } from 'react';
 import { NoteGrid, GridSize } from '../types';
+import { isActiveCell } from '../utils/noteHelpers';
 
 // Rendering constants (matching existing CSS)
 const CELL_WIDTH = 30;
@@ -23,7 +24,7 @@ interface UseCanvasGridProps {
   notesPerMeasure: number;
   middleCPosition: number;
   onToggleNote: (row: number, col: number) => void;
-  onMeasureRightClick?: (measureIndex: number, x: number, y: number) => void;
+  onNoteRightClick?: (row: number, col: number) => void;
 }
 
 export function useCanvasGrid({
@@ -34,7 +35,7 @@ export function useCanvasGrid({
   notesPerMeasure,
   middleCPosition,
   onToggleNote,
-  onMeasureRightClick,
+  onNoteRightClick,
 }: UseCanvasGridProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -66,29 +67,29 @@ export function useCanvasGrid({
     // Clear canvas
     ctx.clearRect(0, 0, canvasWidth, canvasHeight);
 
-    // Collect cells by color for batched drawing
+    // Collect cells by type for batched drawing
     const whiteCells: [number, number][] = [];
     const blackKeyCells: [number, number][] = [];
-    const activeNotes: [number, number][] = [];
-    const highlightedCells: [number, number][] = [];
+    // Note spans: [row, startCol, duration]
+    const noteSpans: [number, number, number][] = [];
 
     for (let row = 1; row < gridSize.rows; row++) {
       const isBlackKey = isBlackKeyRow(row);
       for (let col = 1; col < gridSize.cols; col++) {
-        const hasNote = noteGrid[row]?.[col] === 1;
-        const isHighlighted = col === currentColumn;
+        const cellValue = noteGrid[row]?.[col] ?? 0;
 
-        if (isHighlighted) {
-          highlightedCells.push([row, col]);
+        if (cellValue > 0) {
+          // This is a note start - record the span
+          noteSpans.push([row, col, cellValue]);
+        } else if (cellValue === 0) {
+          // Empty cell - draw background
+          if (isBlackKey) {
+            blackKeyCells.push([row, col]);
+          } else {
+            whiteCells.push([row, col]);
+          }
         }
-
-        if (hasNote) {
-          activeNotes.push([row, col]);
-        } else if (isBlackKey) {
-          blackKeyCells.push([row, col]);
-        } else {
-          whiteCells.push([row, col]);
-        }
+        // Skip -1 cells (continuations) - they'll be covered by the note span
       }
     }
 
@@ -107,9 +108,22 @@ export function useCanvasGrid({
     ctx.fillStyle = COLORS.BLACK_KEY_EMPTY;
     blackKeyCells.forEach(([row, col]) => drawCell(row, col));
 
-    // Active notes
+    // Draw note spans as rectangles
     ctx.fillStyle = COLORS.ACTIVE_NOTE;
-    activeNotes.forEach(([row, col]) => drawCell(row, col));
+    noteSpans.forEach(([row, startCol, duration]) => {
+      const x = (startCol - 1) * CELL_WIDTH;
+      const y = (row - 1) * CELL_HEIGHT;
+      const width = duration * CELL_WIDTH;
+
+      if (duration > 1) {
+        // Rounded rectangle for multi-column notes
+        ctx.beginPath();
+        ctx.roundRect(x + 1, y + 1, width - 2, CELL_HEIGHT - 2, 3);
+        ctx.fill();
+      } else {
+        ctx.fillRect(x, y, CELL_WIDTH, CELL_HEIGHT);
+      }
+    });
 
     // Draw highlight overlay for current column
     if (currentColumn > 0) {
@@ -182,25 +196,30 @@ export function useCanvasGrid({
     }
   }, [gridSize, onToggleNote]);
 
-  // Handle right-click for measure context menu
+  // Handle right-click for note merging
   const handleCanvasContextMenu = useCallback((event: React.MouseEvent<HTMLCanvasElement>) => {
     event.preventDefault();
 
-    if (!onMeasureRightClick) return;
+    if (!onNoteRightClick) return;
 
     const canvas = canvasRef.current;
     if (!canvas) return;
 
     const rect = canvas.getBoundingClientRect();
     const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
 
-    // Convert to column, then to measure index
+    // Convert to grid coordinates
     const col = Math.floor(x / CELL_WIDTH) + 1;
-    const measureIndex = Math.floor((col - 1) / notesPerMeasure);
+    const row = Math.floor(y / CELL_HEIGHT) + 1;
 
-    // Pass screen coordinates for menu positioning
-    onMeasureRightClick(measureIndex, event.clientX, event.clientY);
-  }, [notesPerMeasure, onMeasureRightClick]);
+    // Only trigger for active cells (notes)
+    if (col >= 1 && col < gridSize.cols && row >= 1 && row < gridSize.rows) {
+      if (isActiveCell(noteGrid, row, col)) {
+        onNoteRightClick(row, col);
+      }
+    }
+  }, [noteGrid, gridSize, onNoteRightClick]);
 
   // Re-render when dependencies change
   useEffect(() => {

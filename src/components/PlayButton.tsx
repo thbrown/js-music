@@ -25,14 +25,16 @@ const PlayButton: React.FC<PlayButtonProps> & PlayButtonStatic = ({
 
   const colRef = useRef<number>(currentColumn);
 
-  // Collect active notes
-  const collectActiveNotes = useCallback((): [number, number][] => {
-    const activeNotes: [number, number][] = [];
+  // Collect active notes with duration: [row, col, duration]
+  const collectActiveNotes = useCallback((): [number, number, number][] => {
+    const activeNotes: [number, number, number][] = [];
     for (let row = 1; row < noteGrid.length; row++) {
       if (noteGrid[row]) {
         for (let col = 0; col < noteGrid[row].length; col++) {
-          if (noteGrid[row][col]) {
-            activeNotes.push([row, col]);
+          const cellValue = noteGrid[row][col];
+          // Only collect note starts (value > 0), skip continuations (-1) and empty (0)
+          if (cellValue > 0) {
+            activeNotes.push([row, col, cellValue]);
           }
         }
       }
@@ -40,11 +42,12 @@ const PlayButton: React.FC<PlayButtonProps> & PlayButtonStatic = ({
     return activeNotes;
   }, [noteGrid]);
 
-  // Get the max column with notes
+  // Get the max column with notes (accounting for note duration)
   const getMaxColumn = useCallback((): number => {
     let maxColumn = -1;
-    for (const [_, col] of collectActiveNotes()) {
-      maxColumn = Math.max(maxColumn, col);
+    for (const [_, col, duration] of collectActiveNotes()) {
+      // End of note is at col + duration - 1
+      maxColumn = Math.max(maxColumn, col + duration - 1);
     }
     return maxColumn;
   }, [collectActiveNotes]);
@@ -111,13 +114,15 @@ const PlayButton: React.FC<PlayButtonProps> & PlayButtonStatic = ({
     const activeNotes = collectActiveNotes();
 
     const columnsPerSecond = settings.tempo / 20;
-    const noteDuration = 0.2;
+    const baseNoteDuration = 1 / columnsPerSecond; // Duration of one column in seconds
     const currentTime = audioContextRef.current.currentTime;
 
-    activeNotes.forEach(([row, col]) => {
+    activeNotes.forEach(([row, col, duration]) => {
       if (col < startColumn) return;
 
       const noteStartTime = currentTime + (col - startColumn) / columnsPerSecond;
+      // Scale note duration by column span
+      const noteDuration = duration * baseNoteDuration;
 
       const osc = scheduleNote(
         audioContextRef.current!,
@@ -221,8 +226,8 @@ const PlayButton: React.FC<PlayButtonProps> & PlayButtonStatic = ({
       <button
         className="reset-btn"
         onClick={() => {
-          // Check if there are any notes
-          const hasNotes = noteGrid.some(row => row?.some(cell => cell === 1));
+          // Check if there are any notes (any non-zero cell)
+          const hasNotes = noteGrid.some(row => row?.some(cell => cell !== 0));
           if (!hasNotes || window.confirm('Clear all notes and reset start position?')) {
             onReset();
           }

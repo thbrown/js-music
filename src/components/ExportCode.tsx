@@ -11,25 +11,28 @@ const ExportCode: React.FC<ExportCodeProps> = ({
 
   // Generate export code whenever the grid or settings change
   useEffect(() => {
-    // Collect active notes using dynamic grid dimensions
-    const activeNotes: [number, number][] = [];
-    // Use the actual grid dimensions instead of hardcoded values
+    // Collect active notes with duration: [row, col, duration]
+    const activeNotes: [number, number, number][] = [];
     for (let row = 1; row < noteGrid.length; row++) {
       if (noteGrid[row]) {
         for (let col = 0; col < noteGrid[row].length; col++) {
-          if (noteGrid[row][col]) {
-            activeNotes.push([row, col]);
+          const cellValue = noteGrid[row][col];
+          // Only collect note starts (value > 0), skip continuations (-1) and empty (0)
+          if (cellValue > 0) {
+            activeNotes.push([row, col, cellValue]);
           }
         }
       }
     }
-    
+
     // Prepare data for export
     const noteRows: number[] = [];
     const noteCols: number[] = [];
+    const noteDurations: number[] = [];
     for (let i = 0; i < activeNotes.length; i++) {
       noteRows[i] = activeNotes[i][0];
       noteCols[i] = activeNotes[i][1];
+      noteDurations[i] = activeNotes[i][2];
     }
     
     // Generate the export code that exactly matches the PlayButton behavior
@@ -46,42 +49,46 @@ const ExportCode: React.FC<ExportCodeProps> = ({
       // Create audio context
       const startTime = ctx.currentTime;
       const startColumn = 1; // Default start column
-      
-      // Define active notes
+      const columnsPerSecond = ${columnsPerSecond};
+      const baseNoteDuration = 1 / columnsPerSecond; // Duration of one column in seconds
+
+      // Define active notes with durations
       const noteRows = ${JSON.stringify(noteRows)};
       const noteCols = ${JSON.stringify(noteCols)};
-      
+      const noteDurations = ${JSON.stringify(noteDurations)};
+
       // Create and schedule oscillators
       noteRows.forEach((row, i) => {
         if (row) {
           const col = noteCols[i];
-          
+          const duration = noteDurations[i];
+
           // Skip notes before the start column
           if (col < startColumn) return;
-          
+
           // Create oscillator and gain node
           const osc = ctx.createOscillator();
           const gainNode = ctx.createGain();
-          
+
           // Connect oscillator to gain node and gain node to destination
           osc.connect(gainNode);
           gainNode.connect(ctx.destination);
-          
+
           // Set oscillator properties
           // Use the frequency parameter as the base frequency for middle C (row 13)
           const baseFrequency = ${frequency};
           const semitoneRatio = Math.pow(2, 1/12); // 12th root of 2 for semitone calculation
           const middleC = 13; // Middle C position
           const semitoneOffset = middleC - row;
-          
+
           // Calculate frequency using equal temperament formula
           osc.frequency.value = baseFrequency * Math.pow(semitoneRatio, semitoneOffset);${oscillatorTypeCode}
-          
+
           // Schedule start and stop times - adjust for startColumn
-          // Use tempo to calculate playback speed (higher tempo = faster playback)
-          const noteStartTime = startTime + (col - startColumn) / ${columnsPerSecond};
-          const noteDuration = 0.2; // Fixed note duration
-          
+          // Note duration scales with column span
+          const noteStartTime = startTime + (col - startColumn) / columnsPerSecond;
+          const noteDuration = duration * baseNoteDuration;
+
           osc.start(noteStartTime);
           osc.stop(noteStartTime + noteDuration);
         }

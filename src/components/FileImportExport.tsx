@@ -6,7 +6,7 @@ const DEFAULT_SONG_NAME = 'My Composition';
 
 interface GridData {
   songName: string;
-  activeNotes: [number, number][];
+  activeNotes: [number, number, number][]; // [row, col, duration]
   gridSize: GridSize;
   notesPerMeasure: number;
   version: string;
@@ -28,13 +28,15 @@ const FileImportExport: React.FC<FileImportExportProps> = ({
   // Export grid data to a JSON file
   const exportGrid = () => {
     try {
-      // Collect only active notes to make the export file smaller
-      const activeNotes: [number, number][] = [];
+      // Collect note starts with duration: [row, col, duration]
+      const activeNotes: [number, number, number][] = [];
       for (let row = 1; row < noteGrid.length; row++) {
         if (noteGrid[row]) {
           for (let col = 0; col < noteGrid[row].length; col++) {
-            if (noteGrid[row][col]) {
-              activeNotes.push([row, col]);
+            const cellValue = noteGrid[row][col];
+            // Only collect note starts (value > 0), skip continuations (-1) and empty (0)
+            if (cellValue > 0) {
+              activeNotes.push([row, col, cellValue]);
             }
           }
         }
@@ -42,14 +44,14 @@ const FileImportExport: React.FC<FileImportExportProps> = ({
 
       // Use default name if empty
       const finalSongName = songName.trim() || DEFAULT_SONG_NAME;
-      
+
       // Create a compact data object with only necessary information
       const gridData: GridData = {
         songName: finalSongName,
         activeNotes,
         gridSize,
         notesPerMeasure,
-        version: '2.0',
+        version: '3.0', // Version 3.0 supports note durations
         settings,
         middleCPosition,
         timestamp: new Date().toISOString()
@@ -113,11 +115,23 @@ const FileImportExport: React.FC<FileImportExportProps> = ({
             }
           }
           
-          // Set active notes
-          savedFileData.activeNotes.forEach(([row, col]) => {
+          // Set active notes with duration support
+          savedFileData.activeNotes.forEach((note) => {
+            // Handle both old format [row, col] and new format [row, col, duration]
+            const row = note[0];
+            const col = note[1];
+            const duration = note[2] ?? 1; // Default to 1 for old format files
+
             // Ensure the row and column are valid
             if (row >= 0 && row < savedFileData.gridSize.rows && col >= 0 && col < savedFileData.gridSize.cols) {
-              reconstructedGrid[row][col] = 1;
+              // Set the start cell with duration
+              reconstructedGrid[row][col] = duration;
+              // Set continuation cells (-1) for multi-column notes
+              for (let i = 1; i < duration; i++) {
+                if (col + i < savedFileData.gridSize.cols) {
+                  reconstructedGrid[row][col + i] = -1;
+                }
+              }
             }
           });
           
