@@ -59,4 +59,7 @@ export interface PlayButtonProps {
   setStartColumn: React.Dispatch<React.SetStateAction<number>>;
   middleCPosition: number;
   onReset: () => void;
+  lockToPlayhead: boolean;
+  setLockToPlayhead: React.Dispatch<React.SetStateAction<boolean>>;
+  gridContainerRef: React.RefObject<HTMLDivElement | null>;
 }

@@ -37,6 +37,7 @@ const MusicGrid: React.FC<MusicGridProps> = ({
 
   const [currentColumn, setCurrentColumn] = useState<number>(-1);
   const [startColumn, setStartColumn] = useState<number>(1);
+  const [lockToPlayhead, setLockToPlayhead] = useState<boolean>(false);
 
   // Context menu state
   const [contextMenu, setContextMenu] = useState<{
@@ -534,11 +535,14 @@ const MusicGrid: React.FC<MusicGridProps> = ({
           resetGrid();
           setStartColumn(1);
         }}
+        lockToPlayhead={lockToPlayhead}
+        setLockToPlayhead={setLockToPlayhead}
+        gridContainerRef={gridContainerRef}
       />
 
       {/* Music Grid - Hybrid DOM/Canvas Layout */}
-      <div className="grid-wrapper">
-        <div className="grid-container" ref={gridContainerRef} style={containerStyle}>
+      <div className="grid-wrapper" ref={gridContainerRef}>
+        <div className="grid-container" style={containerStyle}>
           {/* Row 0: Column Headers (DOM) */}
           <div className="column-headers-row">
             {renderColumnHeaders()}

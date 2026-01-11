@@ -15,7 +15,10 @@ const PlayButton: React.FC<PlayButtonProps> & PlayButtonStatic = ({
   currentColumn,
   startColumn,
   middleCPosition,
-  onReset
+  onReset,
+  lockToPlayhead,
+  setLockToPlayhead,
+  gridContainerRef
 }) => {
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -24,6 +27,12 @@ const PlayButton: React.FC<PlayButtonProps> & PlayButtonStatic = ({
   const startTimeRef = useRef<number>(0);
 
   const colRef = useRef<number>(currentColumn);
+  const lockToPlayheadRef = useRef<boolean>(lockToPlayhead);
+
+  // Keep ref in sync with prop
+  useEffect(() => {
+    lockToPlayheadRef.current = lockToPlayhead;
+  }, [lockToPlayhead]);
 
   // Collect active notes with duration: [row, col, duration]
   const collectActiveNotes = useCallback((): [number, number, number][] => {
@@ -81,11 +90,26 @@ const PlayButton: React.FC<PlayButtonProps> & PlayButtonStatic = ({
   // Update the current column based on elapsed time
   const updateCurrentColumn = useCallback((elapsedTime: number) => {
     const columnsPerSecond = settings.tempo / 20;
-    const column = Math.floor(elapsedTime * columnsPerSecond) + startColumn;
+    const preciseColumn = elapsedTime * columnsPerSecond + startColumn;
+    const column = Math.floor(preciseColumn);
 
     if (column !== colRef.current) {
       setCurrentColumn(column);
       colRef.current = column;
+    }
+
+    // Continuous smooth scrolling based on precise position
+    if (lockToPlayheadRef.current && gridContainerRef.current) {
+      const cellWidth = 30; // Must match CELL_WIDTH in useCanvasGrid
+      const labelColumnWidth = 50; // Approximate width of note labels column
+      const container = gridContainerRef.current;
+      const containerWidth = container.clientWidth;
+
+      // Use precise column position for smooth scrolling
+      const playheadX = (preciseColumn - 1) * cellWidth + labelColumnWidth;
+      const targetScroll = playheadX - containerWidth / 3;
+
+      container.scrollLeft = Math.max(0, targetScroll);
     }
 
     if (column > getMaxColumn() + 10) {
@@ -98,7 +122,7 @@ const PlayButton: React.FC<PlayButtonProps> & PlayButtonStatic = ({
         }
       });
     }
-  }, [getMaxColumn, stopPlayback, startColumn, settings.tempo, setCurrentColumn]);
+  }, [getMaxColumn, stopPlayback, startColumn, settings.tempo, setCurrentColumn, gridContainerRef]);
 
   // Function to play the composition
   const playComposition = useCallback(() => {
@@ -241,6 +265,16 @@ const PlayButton: React.FC<PlayButtonProps> & PlayButtonStatic = ({
           <path d="M3 3v5h5" />
         </svg>
       </button>
+
+      {/* Lock to playhead checkbox */}
+      <label className="lock-toggle" title="Auto-scroll to keep playhead visible during playback">
+        <input
+          type="checkbox"
+          checked={lockToPlayhead}
+          onChange={(e) => setLockToPlayhead(e.target.checked)}
+        />
+        <span className="lock-toggle-label">Lock to playhead</span>
+      </label>
     </div>
   );
 };

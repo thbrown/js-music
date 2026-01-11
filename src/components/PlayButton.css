@@ -154,6 +154,37 @@
   margin-top: 2px;
 }
 
+/* Lock to Playhead Toggle */
+.lock-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  flex-shrink: 0;
+}
+
+.lock-toggle:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.lock-toggle input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: var(--color-white);
+}
+
+.lock-toggle-label {
+  font-size: var(--font-size-sm);
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+}
+
 /* Highlighted column style (used in grid) */
 .note.highlighted {
   border: 2px solid var(--color-warning);

@@ -139,14 +139,14 @@ const KeyTranspose: React.FC<KeyTransposeProps> = ({
           <button
             className={`mode-btn ${!isMinor ? 'active' : ''}`}
             onClick={handleConvertToMajor}
-            title="Convert to major scale (happy)"
+            title="Major: Bright, happy sound. Raises the 3rd, 6th, and 7th notes of the scale."
           >
             Major
           </button>
           <button
             className={`mode-btn ${isMinor ? 'active' : ''}`}
             onClick={handleConvertToMinor}
-            title="Convert to minor scale (melancholic)"
+            title="Minor: Sad, melancholic sound. Lowers the 3rd, 6th, and 7th notes of the scale."
           >
             Minor
           </button>
