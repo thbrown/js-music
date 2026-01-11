@@ -1,8 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './Controls.css';
 import { ControlsProps, Settings } from '../types';
 
-const Controls: React.FC<ControlsProps> = ({ onControlChange }) => {
+interface ExtendedControlsProps extends ControlsProps {
+  resetTrigger?: number;
+}
+
+const Controls: React.FC<ExtendedControlsProps> = ({ onControlChange, resetTrigger }) => {
   // Default values for settings
   const defaultOffset = 0;
   const defaultTempo = 100;
@@ -12,6 +16,19 @@ const Controls: React.FC<ControlsProps> = ({ onControlChange }) => {
   const [offset, setOffset] = useState<number>(defaultOffset);
   const [tempo, setTempo] = useState<number>(defaultTempo);
   const [oscillatorType, setOscillatorType] = useState<string>(defaultOscillatorType);
+
+  // Reset when resetTrigger changes
+  useEffect(() => {
+    if (resetTrigger !== undefined && resetTrigger > 0) {
+      setOffset(defaultOffset);
+      setTempo(defaultTempo);
+      setOscillatorType(defaultOscillatorType);
+      if (onControlChange) {
+        const frequency = 440 + defaultOffset;
+        onControlChange({ frequency, tempo: defaultTempo, oscillatorType: defaultOscillatorType });
+      }
+    }
+  }, [resetTrigger]);
 
   // Handle offset change
   const handleOffsetChange = (e: React.ChangeEvent<HTMLInputElement>) => {

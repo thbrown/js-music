@@ -232,3 +232,11 @@
   font-weight: var(--font-weight-medium);
 }
 
+.control-group .trim-btn {
+  width: auto;
+  min-width: auto;
+  padding: var(--spacing-xs) var(--spacing-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+}
+

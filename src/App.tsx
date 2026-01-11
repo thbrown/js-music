@@ -3,6 +3,7 @@ import './App.css'
 import Controls from './components/Controls'
 import ExportCode from './components/ExportCode'
 import FileImportExport from './components/FileImportExport'
+import KeyTranspose from './components/KeyTranspose'
 import MusicGrid from './components/MusicGrid'
 import { GridSize, NoteGrid, Settings } from './types'
 
@@ -17,6 +18,8 @@ function App() {
     const savedNotesPerMeasure = localStorage.getItem('notesPerMeasure');
     const settings = localStorage.getItem('settings');
     const middleCPosition = localStorage.getItem('middleCPosition');
+    const savedCurrentKey = localStorage.getItem('currentKey');
+    const savedIsMinor = localStorage.getItem('isMinor');
 
     if (savedGrid != null && savedGrid !== 'undefined') {
       setNoteGrid(JSON.parse(savedGrid));
@@ -32,6 +35,12 @@ function App() {
     }
     if (middleCPosition != null && middleCPosition !== 'undefined') {
       setMiddleCPosition(JSON.parse(middleCPosition));
+    }
+    if (savedCurrentKey != null && savedCurrentKey !== 'undefined') {
+      setCurrentKey(JSON.parse(savedCurrentKey));
+    }
+    if (savedIsMinor != null && savedIsMinor !== 'undefined') {
+      setIsMinor(JSON.parse(savedIsMinor));
     }
   }, []);
 
@@ -90,6 +99,13 @@ function App() {
     oscillatorType: 'sine'
   });
 
+  // State for key/transpose settings
+  const [currentKey, setCurrentKey] = useState<number>(0);
+  const [isMinor, setIsMinor] = useState<boolean>(false);
+
+  // Reset trigger - increment to trigger reset in child components
+  const [resetTrigger, setResetTrigger] = useState<number>(0);
+
   // Handle control changes
   const handleControlChange = (newSettings: Settings) => {
     setSettings(newSettings);
@@ -102,10 +118,19 @@ function App() {
     setNoteGrid(newGrid);
     setGridSize(DEFAULT_GRID_SIZE);
     setMiddleCPosition(DEFAULT_MIDDLE_C_POSITION);
-    
+
+    // Reset key settings
+    setCurrentKey(0);
+    setIsMinor(false);
+
+    // Trigger reset in child components (Controls, KeyTranspose)
+    setResetTrigger(prev => prev + 1);
+
     localStorage.setItem('musicGrid', JSON.stringify(newGrid));
     localStorage.setItem('gridSize', JSON.stringify(DEFAULT_GRID_SIZE));
     localStorage.setItem('middleCPosition', JSON.stringify(DEFAULT_MIDDLE_C_POSITION));
+    localStorage.setItem('currentKey', JSON.stringify(0));
+    localStorage.setItem('isMinor', JSON.stringify(false));
   };
 
   return (
@@ -128,7 +153,19 @@ function App() {
       </div>
       
       <div className="controls-container">
-        <Controls onControlChange={handleControlChange} />
+        <Controls onControlChange={handleControlChange} resetTrigger={resetTrigger} />
+        <KeyTranspose
+          noteGrid={noteGrid}
+          setNoteGrid={setNoteGrid}
+          gridSize={gridSize}
+          setGridSize={setGridSize}
+          middleCPosition={middleCPosition}
+          setMiddleCPosition={setMiddleCPosition}
+          currentKey={currentKey}
+          setCurrentKey={setCurrentKey}
+          isMinor={isMinor}
+          setIsMinor={setIsMinor}
+        />
         <FileImportExport
           noteGrid={noteGrid}
           gridSize={gridSize}
@@ -136,6 +173,10 @@ function App() {
           settings={settings}
           middleCPosition={middleCPosition}
           setMiddleCPosition={setMiddleCPosition}
+          currentKey={currentKey}
+          setCurrentKey={setCurrentKey}
+          isMinor={isMinor}
+          setIsMinor={setIsMinor}
         />
         <ExportCode 
           noteGrid={noteGrid} 

@@ -208,3 +208,340 @@ export function decoupleNotesRight(
 
   return newGrid;
 }
+
+export interface TransposeResult {
+  grid: NoteGrid;
+  newRows: number;
+  rowsAddedTop: number;
+}
+
+/**
+ * Transpose all notes in the grid by a given number of semitones.
+ * Positive values shift notes up (higher pitch), negative values shift down.
+ * Expands the grid if notes would overflow.
+ */
+export function transposeNotes(
+  noteGrid: NoteGrid,
+  semitones: number,
+  gridRows: number,
+  gridCols: number
+): TransposeResult {
+  if (semitones === 0) {
+    return { grid: noteGrid, newRows: gridRows, rowsAddedTop: 0 };
+  }
+
+  // First, find the bounds of existing notes
+  let minRow = gridRows;
+  let maxRow = 0;
+
+  for (let row = 1; row < noteGrid.length; row++) {
+    if (!noteGrid[row]) continue;
+    for (let col = 0; col < noteGrid[row].length; col++) {
+      if (noteGrid[row][col] > 0) {
+        minRow = Math.min(minRow, row);
+        maxRow = Math.max(maxRow, row);
+      }
+    }
+  }
+
+  // If no notes, just return the original grid
+  if (minRow > maxRow) {
+    return { grid: noteGrid, newRows: gridRows, rowsAddedTop: 0 };
+  }
+
+  // Calculate new positions after transpose
+  const newMinRow = minRow - semitones;
+  const newMaxRow = maxRow - semitones;
+
+  // Calculate how many rows to add
+  let rowsAddedTop = 0;
+  let rowsAddedBottom = 0;
+
+  if (newMinRow < 1) {
+    rowsAddedTop = 1 - newMinRow;
+  }
+  if (newMaxRow >= gridRows) {
+    rowsAddedBottom = newMaxRow - gridRows + 1;
+  }
+
+  const newGridRows = gridRows + rowsAddedTop + rowsAddedBottom;
+
+  // Create new grid with expanded size
+  const newGrid: NoteGrid = [];
+  for (let i = 0; i < newGridRows; i++) {
+    newGrid[i] = Array(gridCols).fill(0);
+  }
+
+  // Copy notes to their new positions (adjusted for rows added at top)
+  for (let row = 1; row < noteGrid.length; row++) {
+    if (!noteGrid[row]) continue;
+
+    for (let col = 0; col < noteGrid[row].length; col++) {
+      const cellValue = noteGrid[row][col];
+
+      // Only process note starts (value > 0)
+      if (cellValue > 0) {
+        // Calculate new row (subtract semitones, add rowsAddedTop offset)
+        const newRow = row - semitones + rowsAddedTop;
+
+        // Set the note start
+        newGrid[newRow][col] = cellValue;
+
+        // Set continuation cells
+        for (let i = 1; i < cellValue; i++) {
+          newGrid[newRow][col + i] = -1;
+        }
+      }
+    }
+  }
+
+  return { grid: newGrid, newRows: newGridRows, rowsAddedTop };
+}
+
+export interface TrimResult {
+  grid: NoteGrid;
+  newRows: number;
+  newCols: number;
+  rowsRemovedTop: number;
+  colsRemovedLeft: number;
+}
+
+/**
+ * Trim unused rows and columns from the grid.
+ * Keeps a minimum padding around the notes.
+ */
+export function trimGrid(
+  noteGrid: NoteGrid,
+  gridRows: number,
+  gridCols: number,
+  minPadding: number = 2
+): TrimResult {
+  // Find the bounds of existing notes
+  let minRow = gridRows;
+  let maxRow = 0;
+  let minCol = gridCols;
+  let maxCol = 0;
+
+  for (let row = 1; row < noteGrid.length; row++) {
+    if (!noteGrid[row]) continue;
+    for (let col = 0; col < noteGrid[row].length; col++) {
+      const cellValue = noteGrid[row][col];
+      if (cellValue > 0) {
+        minRow = Math.min(minRow, row);
+        maxRow = Math.max(maxRow, row);
+        minCol = Math.min(minCol, col);
+        // Account for note duration
+        maxCol = Math.max(maxCol, col + cellValue - 1);
+      }
+    }
+  }
+
+  // If no notes, return minimal grid
+  if (minRow > maxRow) {
+    const defaultRows = 26;
+    const defaultCols = 16;
+    const newGrid: NoteGrid = [];
+    for (let i = 0; i < defaultRows; i++) {
+      newGrid[i] = Array(defaultCols).fill(0);
+    }
+    return {
+      grid: newGrid,
+      newRows: defaultRows,
+      newCols: defaultCols,
+      rowsRemovedTop: 0,
+      colsRemovedLeft: 0,
+    };
+  }
+
+  // Calculate new bounds with padding
+  const newMinRow = Math.max(1, minRow - minPadding);
+  const newMaxRow = Math.min(gridRows - 1, maxRow + minPadding);
+  const newMinCol = Math.max(1, minCol - minPadding);
+  const newMaxCol = Math.min(gridCols - 1, maxCol + minPadding);
+
+  const rowsRemovedTop = newMinRow - 1;
+  const colsRemovedLeft = newMinCol - 1;
+  const newRows = newMaxRow - newMinRow + 2; // +1 for range, +1 for header row
+  const newCols = newMaxCol - newMinCol + 2; // +1 for range, +1 for label column
+
+  // Create new trimmed grid
+  const newGrid: NoteGrid = [];
+  for (let i = 0; i < newRows; i++) {
+    newGrid[i] = Array(newCols).fill(0);
+  }
+
+  // Copy notes to new positions
+  for (let row = newMinRow; row <= newMaxRow; row++) {
+    if (!noteGrid[row]) continue;
+    const newRow = row - rowsRemovedTop;
+
+    for (let col = newMinCol; col <= newMaxCol; col++) {
+      const cellValue = noteGrid[row]?.[col] ?? 0;
+      const newCol = col - colsRemovedLeft;
+      newGrid[newRow][newCol] = cellValue;
+    }
+  }
+
+  return {
+    grid: newGrid,
+    newRows,
+    newCols,
+    rowsRemovedTop,
+    colsRemovedLeft,
+  };
+}
+
+/**
+ * Get the scale degree (0-11) of a note relative to a key.
+ * @param row - The row in the grid
+ * @param middleCPosition - The row where middle C is located
+ * @param keyOffset - The semitone offset of the key from C (0 = C, 2 = D, etc.)
+ * @returns The scale degree (0-11) where 0 is the root
+ */
+function getScaleDegree(row: number, middleCPosition: number, keyOffset: number): number {
+  // Calculate semitones from middle C (negative = lower, positive = higher)
+  const semitonesFromC = middleCPosition - row;
+  // Normalize to 0-11 pitch class
+  const pitchClass = ((semitonesFromC % 12) + 12) % 12;
+  // Calculate scale degree relative to the key
+  const scaleDegree = ((pitchClass - keyOffset) % 12 + 12) % 12;
+  return scaleDegree;
+}
+
+/**
+ * Convert notes from major to minor by lowering the 3rd, 6th, and 7th scale degrees.
+ * @param noteGrid - The note grid
+ * @param gridRows - Number of rows in the grid
+ * @param gridCols - Number of columns in the grid
+ * @param middleCPosition - The row where middle C is located
+ * @param keyOffset - The semitone offset of the key from C (0 = C, 2 = D, etc.)
+ */
+export function convertToMinor(
+  noteGrid: NoteGrid,
+  gridRows: number,
+  gridCols: number,
+  middleCPosition: number,
+  keyOffset: number
+): NoteGrid {
+  // Major scale degrees to convert: 3rd (4), 6th (9), 7th (11)
+  const majorDegrees = [4, 9, 11];
+
+  const newGrid = cloneGrid(noteGrid);
+
+  // First pass: collect notes to move and clear their original positions
+  const notesToMove: { fromRow: number; toRow: number; col: number; duration: number }[] = [];
+
+  for (let row = 1; row < noteGrid.length; row++) {
+    if (!noteGrid[row]) continue;
+
+    for (let col = 0; col < noteGrid[row].length; col++) {
+      const cellValue = noteGrid[row][col];
+
+      // Only process note starts (value > 0)
+      if (cellValue > 0) {
+        const scaleDegree = getScaleDegree(row, middleCPosition, keyOffset);
+
+        if (majorDegrees.includes(scaleDegree)) {
+          // This note needs to be lowered by 1 semitone (row + 1)
+          notesToMove.push({ fromRow: row, toRow: row + 1, col, duration: cellValue });
+
+          // Clear the original note
+          newGrid[row][col] = 0;
+          for (let i = 1; i < cellValue; i++) {
+            if (newGrid[row][col + i] === -1) {
+              newGrid[row][col + i] = 0;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Second pass: place notes in new positions
+  for (const { toRow, col, duration } of notesToMove) {
+    if (toRow >= 1 && toRow < gridRows) {
+      if (!newGrid[toRow]) {
+        newGrid[toRow] = Array(gridCols).fill(0);
+      }
+
+      // Only place if the target is empty
+      if (newGrid[toRow][col] === 0) {
+        newGrid[toRow][col] = duration;
+        for (let i = 1; i < duration; i++) {
+          newGrid[toRow][col + i] = -1;
+        }
+      }
+    }
+  }
+
+  return newGrid;
+}
+
+/**
+ * Convert notes from minor to major by raising the 3rd, 6th, and 7th scale degrees.
+ * @param noteGrid - The note grid
+ * @param gridRows - Number of rows in the grid
+ * @param gridCols - Number of columns in the grid
+ * @param middleCPosition - The row where middle C is located
+ * @param keyOffset - The semitone offset of the key from C (0 = C, 2 = D, etc.)
+ */
+export function convertToMajor(
+  noteGrid: NoteGrid,
+  gridRows: number,
+  gridCols: number,
+  middleCPosition: number,
+  keyOffset: number
+): NoteGrid {
+  // Minor scale degrees to convert: 3rd (3), 6th (8), 7th (10)
+  const minorDegrees = [3, 8, 10];
+
+  const newGrid = cloneGrid(noteGrid);
+
+  // First pass: collect notes to move and clear their original positions
+  const notesToMove: { fromRow: number; toRow: number; col: number; duration: number }[] = [];
+
+  for (let row = 1; row < noteGrid.length; row++) {
+    if (!noteGrid[row]) continue;
+
+    for (let col = 0; col < noteGrid[row].length; col++) {
+      const cellValue = noteGrid[row][col];
+
+      // Only process note starts (value > 0)
+      if (cellValue > 0) {
+        const scaleDegree = getScaleDegree(row, middleCPosition, keyOffset);
+
+        if (minorDegrees.includes(scaleDegree)) {
+          // This note needs to be raised by 1 semitone (row - 1)
+          notesToMove.push({ fromRow: row, toRow: row - 1, col, duration: cellValue });
+
+          // Clear the original note
+          newGrid[row][col] = 0;
+          for (let i = 1; i < cellValue; i++) {
+            if (newGrid[row][col + i] === -1) {
+              newGrid[row][col + i] = 0;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Second pass: place notes in new positions
+  for (const { toRow, col, duration } of notesToMove) {
+    if (toRow >= 1 && toRow < gridRows) {
+      if (!newGrid[toRow]) {
+        newGrid[toRow] = Array(gridCols).fill(0);
+      }
+
+      // Only place if the target is empty
+      if (newGrid[toRow][col] === 0) {
+        newGrid[toRow][col] = duration;
+        for (let i = 1; i < duration; i++) {
+          newGrid[toRow][col + i] = -1;
+        }
+      }
+    }
+  }
+
+  return newGrid;
+}

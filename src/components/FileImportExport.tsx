@@ -12,15 +12,21 @@ interface GridData {
   version: string;
   settings: Settings;
   middleCPosition: number;
+  currentKey?: number;
+  isMinor?: boolean;
   timestamp: string;
 }
 
-const FileImportExport: React.FC<FileImportExportProps> = ({ 
-  noteGrid, 
-  gridSize, 
-  notesPerMeasure, 
-  settings, 
-  middleCPosition 
+const FileImportExport: React.FC<FileImportExportProps> = ({
+  noteGrid,
+  gridSize,
+  notesPerMeasure,
+  settings,
+  middleCPosition,
+  currentKey,
+  setCurrentKey,
+  isMinor,
+  setIsMinor,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [songName, setSongName] = useState<string>(DEFAULT_SONG_NAME);
@@ -51,9 +57,11 @@ const FileImportExport: React.FC<FileImportExportProps> = ({
         activeNotes,
         gridSize,
         notesPerMeasure,
-        version: '3.0', // Version 3.0 supports note durations
+        version: '4.0', // Version 4.0 supports key/minor settings
         settings,
         middleCPosition,
+        currentKey,
+        isMinor,
         timestamp: new Date().toISOString()
       };
 
@@ -142,6 +150,8 @@ const FileImportExport: React.FC<FileImportExportProps> = ({
           localStorage.setItem('notesPerMeasure', JSON.stringify(savedFileData.notesPerMeasure));
           localStorage.setItem('settings', JSON.stringify(savedFileData.settings));
           localStorage.setItem('middleCPosition', JSON.stringify(savedFileData.middleCPosition));
+          localStorage.setItem('currentKey', JSON.stringify(savedFileData.currentKey ?? 0));
+          localStorage.setItem('isMinor', JSON.stringify(savedFileData.isMinor ?? false));
           window.location.reload();
         } catch (error) {
           console.error('Error parsing imported file:', error);

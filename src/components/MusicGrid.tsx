@@ -13,6 +13,7 @@ import {
   decoupleNotesRight,
   isActiveCell,
   getNoteDuration,
+  trimGrid,
 } from '../utils/noteHelpers';
 
 // Extend the PlayButton with static properties
@@ -439,6 +440,32 @@ const MusicGrid: React.FC<MusicGridProps> = ({
     updateGridSize(gridSize.rows, newCols, false);
   };
 
+  // Trim unused rows and columns from the grid
+  const handleTrim = useCallback(() => {
+    const result = trimGrid(noteGrid, gridSize.rows, gridSize.cols);
+
+    // Update the grid
+    localStorage.setItem('musicGrid', JSON.stringify(result.grid));
+    setNoteGrid(result.grid);
+
+    // Update grid size
+    const newGridSize = { rows: result.newRows, cols: result.newCols };
+    localStorage.setItem('gridSize', JSON.stringify(newGridSize));
+    setGridSize(newGridSize);
+
+    // Adjust middleCPosition if rows were removed from top
+    if (result.rowsRemovedTop > 0) {
+      const newMiddleC = middleCPosition - result.rowsRemovedTop;
+      localStorage.setItem('middleCPosition', JSON.stringify(newMiddleC));
+      setMiddleCPosition(newMiddleC);
+    }
+
+    // Reset start column if it would be out of bounds
+    if (startColumn >= result.newCols) {
+      setStartColumn(1);
+    }
+  }, [noteGrid, gridSize, middleCPosition, setNoteGrid, setGridSize, setMiddleCPosition, startColumn]);
+
   // Pass the starting column to PlayButton when it changes
   useEffect(() => {
     const playButtonWithStatic = PlayButton as PlayButtonWithStatic;
@@ -485,6 +512,12 @@ const MusicGrid: React.FC<MusicGridProps> = ({
           <button onClick={() => updateNotesPerMeasure(notesPerMeasure + 1)} title="Increase notes per measure">+</button>
           <span>{notesPerMeasure}</span>
           <button onClick={() => updateNotesPerMeasure(Math.max(1, notesPerMeasure - 1))} title="Decrease notes per measure">-</button>
+        </div>
+
+        <div className="control-group">
+          <button className="trim-btn" onClick={handleTrim} title="Remove unused rows and columns">
+            Trim
+          </button>
         </div>
       </div>
 

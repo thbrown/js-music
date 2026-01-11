@@ -1,0 +1,118 @@
+.key-transpose {
+  background: var(--color-gray-100);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+}
+
+.key-transpose h3 {
+  margin: 0 0 var(--spacing-sm) 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-600);
+  font-weight: 500;
+}
+
+.key-transpose-controls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.key-selector {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.key-selector label {
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-600);
+  min-width: 30px;
+}
+
+.key-selector select {
+  flex: 1;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--color-gray-300);
+  border-radius: var(--radius-sm);
+  background: white;
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.key-selector select:hover {
+  border-color: var(--color-primary);
+}
+
+.key-selector select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+}
+
+.transpose-buttons {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+.transpose-btn {
+  flex: 1;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--color-gray-300);
+  border-radius: var(--radius-sm);
+  background: white;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.transpose-btn:hover {
+  background: var(--color-gray-50);
+  border-color: var(--color-primary);
+}
+
+.transpose-btn:active {
+  background: var(--color-gray-100);
+}
+
+.transpose-btn.octave {
+  background: var(--color-gray-50);
+  font-size: var(--font-size-xs);
+}
+
+.transpose-btn.octave:hover {
+  background: var(--color-gray-100);
+}
+
+.mode-buttons {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+.mode-btn {
+  flex: 1;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--color-gray-300);
+  border-radius: var(--radius-sm);
+  background: white;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.mode-btn:hover {
+  background: var(--color-gray-50);
+  border-color: var(--color-primary);
+}
+
+.mode-btn.active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: white;
+}
+
+.mode-btn.active:hover {
+  background: var(--color-primary-dark);
+}

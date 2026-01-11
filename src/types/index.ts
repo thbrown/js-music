@@ -39,6 +39,10 @@ export interface FileImportExportProps {
   settings: Settings;
   middleCPosition: number;
   setMiddleCPosition: React.Dispatch<React.SetStateAction<number>>;
+  currentKey: number;
+  setCurrentKey: React.Dispatch<React.SetStateAction<number>>;
+  isMinor: boolean;
+  setIsMinor: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 export interface ExportCodeProps {
