@@ -48,35 +48,6 @@ export function getNoteDuration(noteGrid: NoteGrid, row: number, col: number): n
 }
 
 /**
- * Find all horizontally adjacent active cells on the same row.
- * Returns the start and end columns (inclusive) of the connected group.
- */
-export function findAdjacentNotes(
-  noteGrid: NoteGrid,
-  row: number,
-  col: number
-): { startCol: number; endCol: number } {
-  if (!isActiveCell(noteGrid, row, col)) {
-    return { startCol: col, endCol: col };
-  }
-
-  // Expand left to find the start of the group
-  let startCol = col;
-  while (startCol > 1 && isActiveCell(noteGrid, row, startCol - 1)) {
-    startCol--;
-  }
-
-  // Expand right to find the end of the group
-  let endCol = col;
-  const maxCol = noteGrid[row]?.length ?? 0;
-  while (endCol < maxCol - 1 && isActiveCell(noteGrid, row, endCol + 1)) {
-    endCol++;
-  }
-
-  return { startCol, endCol };
-}
-
-/**
  * Create a deep copy of the note grid
  */
 function cloneGrid(noteGrid: NoteGrid): NoteGrid {
@@ -134,16 +105,44 @@ export function deleteNote(noteGrid: NoteGrid, row: number, col: number): NoteGr
 }
 
 /**
- * Merge all adjacent notes on a row into a single long note.
- * Returns the new grid with the merged note.
+ * Find the end column of adjacent notes to the RIGHT of the clicked position.
+ * Returns the end column (inclusive) of the connected group extending right.
  */
-export function mergeAdjacentNotes(
+export function findAdjacentNotesRight(
+  noteGrid: NoteGrid,
+  row: number,
+  col: number
+): number {
+  if (!isActiveCell(noteGrid, row, col)) {
+    return col;
+  }
+
+  // Expand right to find the end of the group
+  let endCol = col;
+  const maxCol = noteGrid[row]?.length ?? 0;
+  while (endCol < maxCol - 1 && isActiveCell(noteGrid, row, endCol + 1)) {
+    endCol++;
+  }
+
+  return endCol;
+}
+
+/**
+ * Merge notes from the clicked note to the right only.
+ * The clicked note becomes the start of the merged note.
+ */
+export function mergeNotesRight(
   noteGrid: NoteGrid,
   row: number,
   col: number
 ): NoteGrid {
-  const { startCol, endCol } = findAdjacentNotes(noteGrid, row, col);
-  const duration = endCol - startCol + 1;
+  // First, find the start of the note we clicked on
+  const noteStart = findNoteStart(noteGrid, row, col);
+  if (noteStart === null) return noteGrid;
+
+  // Find how far right the adjacent notes extend
+  const endCol = findAdjacentNotesRight(noteGrid, row, noteStart);
+  const duration = endCol - noteStart + 1;
 
   if (duration <= 1) return noteGrid; // Nothing to merge
 
@@ -154,14 +153,57 @@ export function mergeAdjacentNotes(
   }
 
   // Clear all cells in the range first
-  for (let c = startCol; c <= endCol; c++) {
+  for (let c = noteStart; c <= endCol; c++) {
     newGrid[row][c] = 0;
   }
 
   // Create the merged note
-  newGrid[row][startCol] = duration;
+  newGrid[row][noteStart] = duration;
   for (let i = 1; i < duration; i++) {
-    newGrid[row][startCol + i] = -1;
+    newGrid[row][noteStart + i] = -1;
+  }
+
+  return newGrid;
+}
+
+/**
+ * Decouple notes to the right of the clicked position (including the clicked cell).
+ * The note from start to before the clicked position stays as one note.
+ * The clicked cell and everything to its right become individual single-beat notes.
+ */
+export function decoupleNotesRight(
+  noteGrid: NoteGrid,
+  row: number,
+  col: number
+): NoteGrid {
+  const noteStart = findNoteStart(noteGrid, row, col);
+  if (noteStart === null) return noteGrid;
+
+  const totalDuration = getNoteDuration(noteGrid, row, noteStart);
+  if (totalDuration <= 1) return noteGrid; // Already a single note, nothing to decouple
+
+  // Calculate the duration from start to before clicked position
+  const leftDuration = col - noteStart;
+
+  const newGrid = cloneGrid(noteGrid);
+
+  if (!newGrid[row]) {
+    newGrid[row] = [];
+  }
+
+  if (leftDuration > 0) {
+    // Update the left portion to have the new shorter duration
+    newGrid[row][noteStart] = leftDuration;
+
+    // Set continuation cells for the left portion
+    for (let i = 1; i < leftDuration; i++) {
+      newGrid[row][noteStart + i] = -1;
+    }
+  }
+
+  // Convert clicked cell and cells to the right into individual notes
+  for (let i = leftDuration; i < totalDuration; i++) {
+    newGrid[row][noteStart + i] = 1;
   }
 
   return newGrid;

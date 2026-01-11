@@ -9,8 +9,10 @@ import {
   findNoteStart,
   createNote,
   deleteNote,
-  mergeAdjacentNotes,
+  mergeNotesRight,
+  decoupleNotesRight,
   isActiveCell,
+  getNoteDuration,
 } from '../utils/noteHelpers';
 
 // Extend the PlayButton with static properties
@@ -210,7 +212,20 @@ const MusicGrid: React.FC<MusicGridProps> = ({
 
   // Handle right-click on a note to merge adjacent notes
   const handleNoteRightClick = useCallback((row: number, col: number) => {
-    const newGrid = mergeAdjacentNotes(noteGrid, row, col);
+    // Find the start of the note and its duration
+    const noteStart = findNoteStart(noteGrid, row, col);
+    if (noteStart === null) return;
+
+    const duration = getNoteDuration(noteGrid, row, noteStart);
+
+    let newGrid: typeof noteGrid;
+    if (duration > 1) {
+      // Note is already combined - decouple notes to the right of click
+      newGrid = decoupleNotesRight(noteGrid, row, col);
+    } else {
+      // Single note - try to merge with adjacent notes to the right
+      newGrid = mergeNotesRight(noteGrid, row, col);
+    }
 
     // Only save if something changed
     if (newGrid !== noteGrid) {

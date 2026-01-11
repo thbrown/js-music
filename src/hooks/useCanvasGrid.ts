@@ -108,20 +108,36 @@ export function useCanvasGrid({
     ctx.fillStyle = COLORS.BLACK_KEY_EMPTY;
     blackKeyCells.forEach(([row, col]) => drawCell(row, col));
 
-    // Draw note spans as rectangles
-    ctx.fillStyle = COLORS.ACTIVE_NOTE;
+    // Draw note spans
     noteSpans.forEach(([row, startCol, duration]) => {
       const x = (startCol - 1) * CELL_WIDTH;
       const y = (row - 1) * CELL_HEIGHT;
-      const width = duration * CELL_WIDTH;
+
+      // First cell is always a solid square
+      ctx.fillStyle = COLORS.ACTIVE_NOTE;
+      ctx.fillRect(x, y, CELL_WIDTH, CELL_HEIGHT);
 
       if (duration > 1) {
-        // Rounded rectangle for multi-column notes
+        // Draw a triangle extending from the first cell to the end
+        // Triangle starts at full height after first cell, tapers to a point
+        const triangleStartX = x + CELL_WIDTH;
+        const triangleEndX = x + (duration * CELL_WIDTH) - 2;
+        const bottomY = y + CELL_HEIGHT;
+
+        // Use gradient to create a smoother fade-out effect
+        //const gradient = ctx.createLinearGradient(triangleStartX, 0, triangleEndX, 0);
+        //gradient.addColorStop(0, COLORS.ACTIVE_NOTE);
+        //gradient.addColorStop(0.6, 'rgba(0, 0, 0, 0.7)');
+        //gradient.addColorStop(1, 'rgba(0, 0, 0, 0.3)');
+        //ctx.fillStyle = gradient;
+
+        // Draw triangle
         ctx.beginPath();
-        ctx.roundRect(x + 1, y + 1, width - 2, CELL_HEIGHT - 2, 3);
+        ctx.moveTo(triangleStartX, y);
+        ctx.lineTo(triangleStartX, y + CELL_HEIGHT);
+        ctx.lineTo(triangleEndX, bottomY);
+        ctx.closePath();
         ctx.fill();
-      } else {
-        ctx.fillRect(x, y, CELL_WIDTH, CELL_HEIGHT);
       }
     });
 
