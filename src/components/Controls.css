@@ -1,22 +1,22 @@
 .oscillator-controls {
-  padding: 15px;
-  background-color: #f8f9fa;
-  border-radius: 8px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-  margin: 15px 0;
+  padding: var(--spacing-lg);
+  background-color: var(--color-gray-50);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  margin: var(--spacing-lg) 0;
 }
 
 .oscillator-controls h3 {
   margin-top: 0;
-  margin-bottom: 10px;
-  color: #333;
-  font-weight: 500;
+  margin-bottom: var(--spacing-sm);
+  color: var(--color-gray-800);
+  font-weight: var(--font-weight-medium);
 }
 
 .control-row {
   display: flex;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: var(--spacing-md);
   flex-wrap: wrap;
 }
 
@@ -25,41 +25,47 @@
 }
 
 .control-label {
-  font-weight: 500;
-  margin-right: 10px;
+  font-weight: var(--font-weight-medium);
+  margin-right: var(--spacing-sm);
   min-width: 80px;
 }
 
 .oscillator-controls input[type="number"] {
   width: 60px;
-  padding: 6px 8px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 14px;
+  padding: var(--spacing-sm);
+  border: 1px solid var(--color-gray-300);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-base);
   margin: 0 5px;
-  background-color: #fff;
-  box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+  background-color: var(--color-white);
+  box-shadow: var(--shadow-inset);
+}
+
+.oscillator-controls input[type="number"]:focus {
+  outline: none;
+  border-color: var(--color-primary);
 }
 
 .oscillator-types {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: var(--spacing-sm);
 }
 
 .oscillator-type-label {
   display: flex;
   align-items: center;
-  margin-right: 10px;
+  margin-right: var(--spacing-sm);
   cursor: pointer;
 }
 
 .oscillator-type-label input[type="radio"] {
   margin-right: 5px;
+  accent-color: var(--color-primary);
 }
 
 .oscillator-controls .instructions {
-  margin-top: 12px;
-  color: #666;
+  margin-top: var(--spacing-md);
+  color: var(--color-gray-600);
   font-style: italic;
 }

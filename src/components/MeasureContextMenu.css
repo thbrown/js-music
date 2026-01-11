@@ -2,13 +2,13 @@
 .measure-context-menu {
   position: fixed;
   z-index: 1000;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+  background: var(--color-white);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-xl);
   min-width: 260px;
   max-width: 300px;
   overflow: hidden;
-  animation: menuFadeIn 0.15s ease-out;
+  animation: menuFadeIn var(--transition-fast) ease-out;
 }
 
 @keyframes menuFadeIn {
@@ -27,29 +27,29 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 16px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: var(--color-primary-gradient);
+  color: var(--color-white);
 }
 
 .menu-title {
-  font-weight: 600;
-  font-size: 14px;
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-base);
 }
 
 .menu-close {
   background: rgba(255, 255, 255, 0.2);
   border: none;
-  color: white;
+  color: var(--color-white);
   width: 24px;
   height: 24px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   cursor: pointer;
-  font-size: 16px;
+  font-size: var(--font-size-lg);
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.2s;
+  transition: background var(--transition-base);
 }
 
 .menu-close:hover {
@@ -60,17 +60,17 @@
 .clear-measure-btn {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--spacing-sm);
   width: 100%;
-  padding: 10px 12px;
-  background: #fff5f5;
-  border: 1px solid #ffcccc;
-  border-radius: 8px;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--color-danger-light);
+  border: 1px solid var(--color-danger-border);
+  border-radius: var(--radius-lg);
   color: #cc4444;
-  font-size: 14px;
-  font-weight: 500;
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all var(--transition-fast);
 }
 
 .clear-measure-btn:hover {
@@ -85,24 +85,24 @@
 
 /* Empty state */
 .menu-empty {
-  padding: 24px 16px;
+  padding: var(--spacing-2xl) var(--spacing-lg);
   text-align: center;
-  color: #666;
-  font-size: 14px;
+  color: var(--color-gray-600);
+  font-size: var(--font-size-base);
 }
 
 /* Sections */
 .menu-section {
-  padding: 12px 16px;
-  border-bottom: 1px solid #eee;
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-bottom: 1px solid var(--color-gray-200);
 }
 
 .section-label {
   display: block;
-  font-size: 12px;
-  font-weight: 600;
-  color: #666;
-  margin-bottom: 8px;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-gray-600);
+  margin-bottom: var(--spacing-sm);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -111,7 +111,7 @@
 .measure-list {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--spacing-xs);
   max-height: 150px;
   overflow-y: auto;
 }
@@ -120,12 +120,12 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 12px;
-  background: #f5f5f5;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--color-gray-100);
   border: 2px solid transparent;
-  border-radius: 8px;
+  border-radius: var(--radius-lg);
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all var(--transition-fast);
 }
 
 .measure-item:hover {
@@ -134,46 +134,46 @@
 
 .measure-item.selected {
   background: #e8f4fd;
-  border-color: #667eea;
+  border-color: var(--color-primary);
 }
 
 .measure-label {
-  font-weight: 500;
-  font-size: 14px;
-  color: #333;
+  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-base);
+  color: var(--color-gray-800);
 }
 
 .measure-notes {
-  font-size: 12px;
-  color: #888;
-  background: #ddd;
-  padding: 2px 8px;
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-500);
+  background: var(--color-gray-300);
+  padding: 2px var(--spacing-sm);
   border-radius: 10px;
 }
 
 .measure-item.selected .measure-notes {
-  background: #667eea;
-  color: white;
+  background: var(--color-primary);
+  color: var(--color-white);
 }
 
 /* Copy Count Control */
 .copy-count-control {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--spacing-md);
   justify-content: center;
-  margin-bottom: 8px;
+  margin-bottom: var(--spacing-sm);
 }
 
 .copy-count-control button {
   width: 32px;
   height: 32px;
-  border: 1px solid #ddd;
-  background: white;
-  border-radius: 6px;
-  font-size: 18px;
+  border: 1px solid var(--color-gray-300);
+  background: var(--color-white);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-xl);
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all var(--transition-fast);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -181,8 +181,8 @@
 }
 
 .copy-count-control button:hover:not(:disabled) {
-  background: #f0f0f0;
-  border-color: #667eea;
+  background: var(--color-gray-100);
+  border-color: var(--color-primary);
 }
 
 .copy-count-control button:disabled {
@@ -191,31 +191,31 @@
 }
 
 .copy-count-value {
-  font-size: 20px;
-  font-weight: 600;
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-semibold);
   min-width: 40px;
   text-align: center;
 }
 
 .copy-preview {
-  font-size: 12px;
-  color: #666;
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-600);
   text-align: center;
-  padding: 8px;
-  background: #f9f9f9;
-  border-radius: 6px;
+  padding: var(--spacing-sm);
+  background: var(--color-gray-50);
+  border-radius: var(--radius-md);
 }
 
 /* Transparent Toggle */
 .transparent-toggle {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--spacing-sm);
   cursor: pointer;
-  padding: 8px 12px;
-  background: #f5f5f5;
-  border-radius: 8px;
-  transition: background 0.15s;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--color-gray-100);
+  border-radius: var(--radius-lg);
+  transition: background var(--transition-fast);
 }
 
 .transparent-toggle:hover {
@@ -226,37 +226,37 @@
   width: 18px;
   height: 18px;
   cursor: pointer;
-  accent-color: #667eea;
+  accent-color: var(--color-primary);
 }
 
 .toggle-label {
-  font-weight: 500;
-  font-size: 14px;
-  color: #333;
+  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-base);
+  color: var(--color-gray-800);
 }
 
 .toggle-hint {
   font-size: 11px;
-  color: #888;
+  color: var(--color-gray-500);
   margin-left: auto;
 }
 
 /* Actions */
 .menu-actions {
-  padding: 12px 16px;
+  padding: var(--spacing-md) var(--spacing-lg);
 }
 
 .copy-button {
   width: 100%;
-  padding: 12px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  padding: var(--spacing-md);
+  background: var(--color-primary-gradient);
+  color: var(--color-white);
   border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
+  border-radius: var(--radius-lg);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all var(--transition-base);
 }
 
 .copy-button:hover:not(:disabled) {

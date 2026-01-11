@@ -2,19 +2,19 @@
 .music-grid-app {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: var(--spacing-xl);
   max-width: 1200px;
   margin: 0 auto;
-  padding: 20px;
-  font-family: Arial, sans-serif;
+  padding: var(--spacing-xl);
+  font-family: inherit;
 }
 
 .grid-wrapper {
   position: relative;
   overflow-x: auto;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  border: 1px solid var(--color-gray-300);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
 }
 
 .grid-container {
@@ -48,18 +48,18 @@
   display: block;
 }
 
-.note { 
-  width: 30px; /* Wider squares */
-  height: 20px; 
-  float: left; 
-  border: 1px solid #ccc; 
+.note {
+  width: 30px;
+  height: 20px;
+  float: left;
+  border: 1px solid var(--color-gray-400);
   box-sizing: border-box;
-  transition: background-color 0.2s ease;
+  transition: background-color var(--transition-base);
 }
 
 /* First note in measure marker */
 .measure-start {
-  border-left: 2px solid rgba(75, 0, 130, 0.6); /* Indigo color */
+  border-left: 2px solid var(--color-measure-marker);
 }
 
 /* Sticky leftmost column */
@@ -67,22 +67,22 @@
   position: sticky;
   left: 0;
   z-index: 10;
-  box-shadow: 2px 0 5px rgba(0,0,0,0.1);
-  user-select: none; /* Prevent text selection */
-  -webkit-user-select: none; /* Safari */
-  -moz-user-select: none; /* Firefox */
-  -ms-user-select: none; /* IE/Edge */
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 }
 
 /* Clickable note labels */
 .note-label-clickable {
   cursor: pointer;
-  transition: transform 0.1s ease, box-shadow 0.1s ease;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .note-label-clickable:hover {
   transform: scale(1.05);
-  box-shadow: 2px 0 8px rgba(0,0,0,0.2);
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.2);
 }
 
 .note-label-clickable:active {
@@ -93,97 +93,142 @@
 .note-header {
   height: 20px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--transition-base);
 }
 
 .note-header:hover:not(.note-label):not(.start-column) {
-  background-color: #ddd;
-  box-shadow: 0 0 5px rgba(0,0,0,0.2);
+  background-color: var(--color-gray-300);
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
 }
 
 /* Measure number headers */
 .note-header.measure-start-header {
-  font-weight: 600;
-  color: #667eea;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-primary);
   background-color: #f0f0ff;
-  border-left: 2px solid rgba(75, 0, 130, 0.6);
+  border-left: 2px solid var(--color-measure-marker);
 }
 
 /* Start column indicator - must come after measure-start-header to override */
 .note-header.start-column {
-  background-color: #4CAF50;
-  color: white;
+  background-color: var(--color-success);
+  color: var(--color-white);
   box-shadow: 0 0 5px rgba(76, 175, 80, 0.5);
-  border-left: 2px solid #4CAF50;
+  border-left: 2px solid var(--color-success);
 }
 
 /* Start column indicator for non-header cells */
 .note.start-column:not(.note-header) {
-  border-left: 2px solid #4CAF50;
+  border-left: 2px solid var(--color-success);
 }
 
 /* Grey line styling */
-.note[data-line="13"] { 
-  background-color: #aaa; 
+.note[data-line="13"] {
+  background-color: #aaa;
+}
+
+/* Header corner cell (row 0, col 0) */
+.note-header-corner {
+  background-color: var(--color-gray-200);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: var(--font-size-xs);
+}
+
+/* Standard column header cell */
+.note-header-cell {
+  background-color: var(--color-gray-200);
+  color: var(--color-black);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+}
+
+/* Note label cells */
+.note-label-cell {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+}
+
+/* White key note label */
+.note-label-white {
+  background-color: var(--color-white);
+  color: var(--color-black);
+}
+
+/* Black key note label */
+.note-label-black {
+  background-color: var(--color-black-key);
+  color: var(--color-white);
 }
 
 /* Control Panels */
 .control-panels {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: var(--spacing-lg);
 }
-
 
 /* Grid Controls */
 .grid-controls {
   display: flex;
   flex-wrap: wrap;
-  gap: 20px;
-  padding: 15px;
-  background-color: #f0f4f8;
-  border-radius: 8px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  gap: var(--spacing-xl);
+  padding: var(--spacing-lg);
+  background-color: var(--color-gray-150);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
   align-items: center;
 }
 
 .control-group {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  background-color: white;
-  border-radius: 6px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: var(--color-white);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
 }
 
 .control-group button {
   display: flex;
   justify-content: center;
   align-items: center;
+  width: 30px;
+  height: 30px;
   min-width: 30px;
   min-height: 30px;
-  padding: 6px;
+  padding: var(--spacing-sm);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  cursor: pointer;
+  border: 1px solid var(--color-gray-400);
+  background-color: var(--color-white);
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+}
+
+.control-group button:hover {
+  background-color: var(--color-gray-100);
+  border-color: var(--color-primary);
 }
 
 .control-group label {
-  font-weight: bold;
-  margin-right: 5px;
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-base);
+  color: var(--color-gray-800);
 }
 
 .control-group span {
   min-width: 30px;
   text-align: center;
-}
-
-.control-group button {
-  width: 30px;
-  height: 30px;
-  font-size: 16px;
-  font-weight: bold;
-  cursor: pointer;
-  border: 1px solid #ccc;
-  background-color: white;
-  border-radius: 4px;
+  font-weight: var(--font-weight-medium);
 }
 

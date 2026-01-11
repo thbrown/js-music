@@ -229,14 +229,7 @@ const MusicGrid: React.FC<MusicGridProps> = ({
         headers.push(
           <div
             key={`header_${col}`}
-            className="note note-header note-label"
-            style={{
-              backgroundColor: '#eee',
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              fontSize: '10px'
-            }}
+            className="note note-header note-label note-header-corner"
           >
             M
           </div>
@@ -245,17 +238,8 @@ const MusicGrid: React.FC<MusicGridProps> = ({
         headers.push(
           <div
             key={`header_${col}`}
-            className={`note note-header ${isStart ? 'start-column' : ''} ${isCurrent ? 'highlighted' : ''} ${isMeasureStart ? 'measure-start-header' : ''}`}
+            className={`note note-header note-header-cell ${isStart ? 'start-column' : ''} ${isCurrent ? 'highlighted' : ''} ${isMeasureStart ? 'measure-start-header' : ''}`}
             onClick={() => handleColumnClick(col)}
-            style={{
-              backgroundColor: isStart ? '#4CAF50' : '#eee',
-              color: isStart ? 'white' : 'black',
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              fontSize: '10px',
-              cursor: 'pointer'
-            }}
           >
             {isStart ? '▶' : measureNumber || ''}
           </div>
@@ -276,17 +260,8 @@ const MusicGrid: React.FC<MusicGridProps> = ({
       labels.push(
         <div
           key={`label_${row}`}
-          className="note note-label note-label-clickable"
+          className={`note note-label note-label-clickable note-label-cell ${isBlackKey ? 'note-label-black' : 'note-label-white'}`}
           onClick={() => playSingleNote(row)}
-          style={{
-            backgroundColor: isBlackKey ? '#444' : '#fff',
-            color: isBlackKey ? 'white' : 'black',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            fontSize: '10px',
-            cursor: 'pointer',
-          }}
         >
           {getNoteName(row)}
         </div>
